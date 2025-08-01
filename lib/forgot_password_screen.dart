@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'api_service.dart';
+import 'otp_verification_screen.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -16,6 +18,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
   
   // Error message
   String? _emailError;
+  String? _generalError;
   
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -65,6 +68,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
   void _validateForm() {
     setState(() {
       _emailError = _validateEmail(_emailController.text);
+      _generalError = null;
     });
   }
 
@@ -77,60 +81,40 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     
     setState(() {
       _isLoading = true;
+      _generalError = null;
     });
     
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 2));
-    
-    setState(() {
-      _isLoading = false;
-    });
-    
-    // Show success dialog
-    _showSuccessDialog();
-  }
-
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          title: const Text(
-            'Success',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1F2937),
-            ),
-          ),
-          content: const Text(
-            'A verification code has been sent to your email',
-            style: TextStyle(
-              color: Color(0xFF6B7280),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-                // Navigate to verification screen or back to login
-                // Navigator.push(context, MaterialPageRoute(builder: (context) => ResetVerificationScreen()));
-              },
-              child: const Text(
-                'Continue',
-                style: TextStyle(
-                  color: Color(0xFF9A563A),
-                  fontWeight: FontWeight.w600,
-                ),
+    try {
+      final result = await ApiService.forgotPassword(
+        email: _emailController.text.trim(),
+      );
+      
+      if (result['success']) {
+        // Navigate to OTP verification screen
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OTPVerificationScreen(
+                email: _emailController.text.trim(),
               ),
             ),
-          ],
-        );
-      },
-    );
+          );
+        }
+      } else {
+        setState(() {
+          _generalError = result['message'];
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _generalError = 'An unexpected error occurred. Please try again.';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -240,7 +224,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                'Please enter your email address account to send the OTP verification to reset your password',
+                                'Please enter your email address to receive a verification code for resetting your password',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 16,
@@ -249,6 +233,28 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                 ),
                               ),
                               const SizedBox(height: 40),
+                              
+                              // General Error Message
+                              if (_generalError != null) ...[
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: Colors.red.withOpacity(0.3)),
+                                  ),
+                                  child: Text(
+                                    _generalError!,
+                                    style: const TextStyle(
+                                      color: Colors.red,
+                                      fontSize: 14,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                              ],
                               
                               // Email Input
                               Container(
@@ -275,6 +281,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                   controller: _emailController,
                                   keyboardType: TextInputType.emailAddress,
                                   autocorrect: false,
+                                  enabled: !_isLoading,
                                   decoration: InputDecoration(
                                     hintText: 'Email',
                                     hintStyle: TextStyle(color: Colors.grey[500]),
@@ -293,9 +300,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                     ),
                                   ),
                                   onChanged: (value) {
-                                    if (_emailError != null) {
+                                    if (_emailError != null || _generalError != null) {
                                       setState(() {
                                         _emailError = null;
+                                        _generalError = null;
                                       });
                                     }
                                   },
@@ -330,7 +338,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                               
                               // Need Help Link
                               GestureDetector(
-                                onTap: () {
+                                onTap: _isLoading ? null : () {
                                   // Navigate to help screen or show help dialog
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
@@ -339,10 +347,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                     ),
                                   );
                                 },
-                                child: const Text(
+                                child: Text(
                                   'Need Help?',
                                   style: TextStyle(
-                                    color: Color(0xFF9A563A),
+                                    color: _isLoading 
+                                        ? Colors.grey 
+                                        : const Color(0xFF9A563A),
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -386,7 +396,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                       ),
                                     )
                                   : const Text(
-                                      'Continue',
+                                      'Send Verification Code',
                                       style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.w600,
@@ -398,13 +408,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                           
                           // Back Button
                           GestureDetector(
-                            onTap: () {
+                            onTap: _isLoading ? null : () {
                               Navigator.pop(context);
                             },
-                            child: const Text(
-                              'Back',
+                            child: Text(
+                              'Back to Login',
                               style: TextStyle(
-                                color: Color(0xFF1F2937),
+                                color: _isLoading 
+                                    ? Colors.grey 
+                                    : const Color(0xFF1F2937),
                                 fontSize: 16,
                               ),
                             ),

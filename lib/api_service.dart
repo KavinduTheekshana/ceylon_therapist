@@ -51,6 +51,102 @@ class ApiService {
     }
   }
 
+  // Forgot Password method
+  static Future<Map<String, dynamic>> forgotPassword({
+    required String email,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/therapist/forgot-password'),
+        headers: headers,
+        body: json.encode({
+          'email': email,
+        }),
+      );
+
+      final responseData = json.decode(response.body);
+
+      return {
+        'success': response.statusCode == 200,
+        'message': responseData['message'] ?? (response.statusCode == 200 
+            ? 'Password reset code sent to your email' 
+            : 'Failed to send password reset code'),
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Verify OTP method
+  static Future<Map<String, dynamic>> verifyOTP({
+    required String email,
+    required String otp,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/therapist/verify-reset-code'),
+        headers: headers,
+        body: json.encode({
+          'email': email,
+          'code': otp,
+        }),
+      );
+
+      final responseData = json.decode(response.body);
+
+      return {
+        'success': response.statusCode == 200,
+        'message': responseData['message'] ?? (response.statusCode == 200 
+            ? 'OTP verified successfully' 
+            : 'Invalid or expired OTP'),
+        'data': responseData['data'],
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Reset Password method
+  static Future<Map<String, dynamic>> resetPassword({
+    required String email,
+    required String resetToken,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/therapist/reset-password'),
+        headers: headers,
+        body: json.encode({
+          'email': email,
+          'reset_token': resetToken,
+          'password': newPassword,
+          'password_confirmation': confirmPassword,
+        }),
+      );
+
+      final responseData = json.decode(response.body);
+
+      return {
+        'success': response.statusCode == 200,
+        'message': responseData['message'] ?? (response.statusCode == 200 
+            ? 'Password reset successfully' 
+            : 'Failed to reset password'),
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
   // Save login data to SharedPreferences
   static Future<void> saveLoginData(Map<String, dynamic> loginData) async {
     final prefs = await SharedPreferences.getInstance();
