@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'forgot_password_screen.dart';
+import 'therapist_dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,6 +22,11 @@ class _LoginScreenState extends State<LoginScreen>
   bool _isLoading = false;
   bool _isEmailFocused = false;
   bool _isPasswordFocused = false;
+  
+  // Error messages
+  String? _emailError;
+  String? _passwordError;
+  String? _generalError;
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -55,46 +64,97 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
-  void _handleLogin() async {
-    if (!_formKey.currentState!.validate()) return;
+  String? _validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Email is required';
+    }
+    if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(value)) {
+      return 'Invalid email format';
+    }
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Password is required';
+    }
+    return null;
+  }
+
+  void _validateForm() {
+    setState(() {
+      _emailError = _validateEmail(_emailController.text);
+      _passwordError = _validatePassword(_passwordController.text);
+      _generalError = null;
+    });
+  }
+
+  Future<void> _handleLogin() async {
+    _validateForm();
+    
+    if (_emailError != null || _passwordError != null) {
+      return;
+    }
 
     setState(() {
       _isLoading = true;
+      _generalError = null;
     });
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final response = await http.post(
+        Uri.parse('http://127.0.0.1:8000/api/therapist/login'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode({
+          'email': _emailController.text.trim(),
+          'password': _passwordController.text,
+        }),
+      );
 
-    setState(() {
-      _isLoading = false;
-    });
+      final responseData = json.decode(response.body);
 
-    // Show success message or navigate to next screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Login successful!'),
-        backgroundColor: Color(0xFF9A563A),
-      ),
-    );
-  }
+      if (response.statusCode == 200 && responseData['success'] == true) {
+        // Save user data and token
+        final prefs = await SharedPreferences.getInstance();
+        final therapistData = responseData['data']['therapist'];
+        final accessToken = responseData['data']['access_token'];
+        
+        await prefs.setString('access_token', accessToken);
+        await prefs.setString('token_type', responseData['data']['token_type']);
+        await prefs.setString('therapist_data', json.encode(therapistData));
+        await prefs.setBool('is_logged_in', true);
 
-  void _handleGoogleSignIn() {
-    // Implement Google Sign In
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Google Sign In pressed')));
-  }
-
-  void _handleContinueAsGuest() {
-    // Implement guest navigation
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Continue as Guest pressed')));
+        // Navigate to dashboard
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TherapistDashboard(therapistData: therapistData),
+            ),
+          );
+        }
+      } else {
+        setState(() {
+          _generalError = responseData['message'] ?? 'Login failed. Please try again.';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _generalError = 'Network error. Please check your connection and try again.';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-        final screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       body: Stack(
@@ -154,7 +214,7 @@ class _LoginScreenState extends State<LoginScreen>
 
                           // Header text
                           const Text(
-                            'Login Account',
+                            'Login Therapist',
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
@@ -171,15 +231,39 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                           const SizedBox(height: 40),
 
+                          // General Error Message
+                          if (_generalError != null) ...[
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.red.withOpacity(0.3)),
+                              ),
+                              child: Text(
+                                _generalError!,
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 14,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+
                           // Email Input
                           Container(
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color: _isEmailFocused
-                                    ? const Color(0xFF9A563A)
-                                    : const Color(0xFFDFDFDF),
+                                color: _emailError != null 
+                                    ? Colors.red
+                                    : _isEmailFocused
+                                        ? const Color(0xFF9A563A)
+                                        : const Color(0xFFDFDFDF),
                                 width: 1,
                               ),
                               boxShadow: [
@@ -194,14 +278,17 @@ class _LoginScreenState extends State<LoginScreen>
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
                               autocorrect: false,
+                              enabled: !_isLoading,
                               decoration: InputDecoration(
                                 hintText: 'Email',
                                 hintStyle: TextStyle(color: Colors.grey[500]),
                                 prefixIcon: Icon(
                                   Icons.email_outlined,
-                                  color: _isEmailFocused
-                                      ? const Color(0xFF9A563A)
-                                      : const Color(0xFFDFDFDF),
+                                  color: _emailError != null
+                                      ? Colors.red
+                                      : _isEmailFocused
+                                          ? const Color(0xFF9A563A)
+                                          : const Color(0xFFDFDFDF),
                                 ),
                                 border: InputBorder.none,
                                 contentPadding: const EdgeInsets.symmetric(
@@ -210,7 +297,11 @@ class _LoginScreenState extends State<LoginScreen>
                                 ),
                               ),
                               onChanged: (value) {
-                                setState(() {});
+                                if (_emailError != null) {
+                                  setState(() {
+                                    _emailError = null;
+                                  });
+                                }
                               },
                               onTap: () {
                                 setState(() {
@@ -222,19 +313,23 @@ class _LoginScreenState extends State<LoginScreen>
                                   _isEmailFocused = false;
                                 });
                               },
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Email is required';
-                                }
-                                if (!RegExp(
-                                  r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
-                                ).hasMatch(value)) {
-                                  return 'Invalid email format';
-                                }
-                                return null;
-                              },
                             ),
                           ),
+                          
+                          // Email Error Message
+                          if (_emailError != null) ...[
+                            const SizedBox(height: 8),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                _emailError!,
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 16),
 
                           // Password Input
@@ -243,9 +338,11 @@ class _LoginScreenState extends State<LoginScreen>
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color: _isPasswordFocused
-                                    ? const Color(0xFF9A563A)
-                                    : const Color(0xFFDFDFDF),
+                                color: _passwordError != null
+                                    ? Colors.red
+                                    : _isPasswordFocused
+                                        ? const Color(0xFF9A563A)
+                                        : const Color(0xFFDFDFDF),
                                 width: 1,
                               ),
                               boxShadow: [
@@ -259,14 +356,17 @@ class _LoginScreenState extends State<LoginScreen>
                             child: TextFormField(
                               controller: _passwordController,
                               obscureText: !_isPasswordVisible,
+                              enabled: !_isLoading,
                               decoration: InputDecoration(
                                 hintText: 'Password',
                                 hintStyle: TextStyle(color: Colors.grey[500]),
                                 prefixIcon: Icon(
                                   Icons.key_outlined,
-                                  color: _isPasswordFocused
-                                      ? const Color(0xFF9A563A)
-                                      : const Color(0xFFDFDFDF),
+                                  color: _passwordError != null
+                                      ? Colors.red
+                                      : _isPasswordFocused
+                                          ? const Color(0xFF9A563A)
+                                          : const Color(0xFFDFDFDF),
                                 ),
                                 suffixIcon: IconButton(
                                   icon: Icon(
@@ -277,7 +377,7 @@ class _LoginScreenState extends State<LoginScreen>
                                         ? const Color(0xFF9A563A)
                                         : Colors.grey,
                                   ),
-                                  onPressed: () {
+                                  onPressed: _isLoading ? null : () {
                                     setState(() {
                                       _isPasswordVisible = !_isPasswordVisible;
                                     });
@@ -289,6 +389,13 @@ class _LoginScreenState extends State<LoginScreen>
                                   vertical: 20,
                                 ),
                               ),
+                              onChanged: (value) {
+                                if (_passwordError != null) {
+                                  setState(() {
+                                    _passwordError = null;
+                                  });
+                                }
+                              },
                               onTap: () {
                                 setState(() {
                                   _isPasswordFocused = true;
@@ -299,27 +406,43 @@ class _LoginScreenState extends State<LoginScreen>
                                   _isPasswordFocused = false;
                                 });
                               },
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Password is required';
-                                }
-                                return null;
-                              },
                             ),
                           ),
+                          
+                          // Password Error Message
+                          if (_passwordError != null) ...[
+                            const SizedBox(height: 8),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                _passwordError!,
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 16),
 
                           // Forgot Password
                           Align(
                             alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: () {
-                                // Navigate to forgot password screen
+                            child: GestureDetector(
+                              onTap: _isLoading ? null : () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const ForgotPasswordScreen(),
+                                  ),
+                                );
                               },
-                              child: const Text(
+                              child: Text(
                                 'Forgot Password?',
                                 style: TextStyle(
-                                  color: Color(0xFF9A563A),
+                                  color: _isLoading 
+                                      ? Colors.grey 
+                                      : const Color(0xFF9A563A),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
