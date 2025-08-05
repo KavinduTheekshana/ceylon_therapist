@@ -395,4 +395,45 @@ class ApiService {
       };
     }
   }
+
+  // Update booking status
+  static Future<Map<String, dynamic>> updateBookingStatus({
+    required int bookingId,
+    required String status,
+    String? notes,
+  }) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) {
+        return {
+          'success': false,
+          'message': 'No access token found',
+        };
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/therapist/bookings/$bookingId/status'),
+        headers: getAuthHeaders(token),
+        body: json.encode({
+          'status': status,
+          if (notes != null) 'notes': notes,
+        }),
+      );
+
+      final responseData = json.decode(response.body);
+
+      return {
+        'success': response.statusCode == 200,
+        'message': responseData['message'] ?? (response.statusCode == 200 
+            ? 'Booking status updated successfully' 
+            : 'Failed to update booking status'),
+        'data': responseData['data'],
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
 }

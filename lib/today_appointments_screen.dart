@@ -2,37 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'api_service.dart';
+import 'treatment_session_screen.dart';
 
-class MyAppointmentsScreen extends StatefulWidget {
+class TodayAppointmentsScreen extends StatefulWidget {
   final Map<String, dynamic> therapistData;
 
-  const MyAppointmentsScreen({super.key, required this.therapistData});
+  const TodayAppointmentsScreen({super.key, required this.therapistData});
 
   @override
-  State<MyAppointmentsScreen> createState() => _MyAppointmentsScreenState();
+  State<TodayAppointmentsScreen> createState() =>
+      _TodayAppointmentsScreenState();
 }
 
-class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
+class _TodayAppointmentsScreenState extends State<TodayAppointmentsScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
   bool _isLoading = true;
-  List<dynamic> _appointments = [];
-  List<dynamic> _filteredAppointments = [];
+  List<dynamic> _todayAppointments = [];
+  Map<String, dynamic>? _meta;
   String? _errorMessage;
-  String _selectedStatus = 'all'; // Default filter
-
-  // Available status filters
-  final List<Map<String, String>> _statusFilters = [
-    {'value': 'all', 'label': 'All Status'},
-    {'value': 'pending', 'label': 'Pending'},
-    {'value': 'confirmed', 'label': 'Confirmed'},
-    {'value': 'pending_payment', 'label': 'Payment Pending'},
-    {'value': 'completed', 'label': 'Completed'},
-    {'value': 'cancelled', 'label': 'Cancelled'},
-  ];
 
   // Modern color scheme
   static const Color _primaryColor = Color(0xFF2563EB);
@@ -64,7 +55,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
         );
 
     _animationController.forward();
-    _loadAppointments();
+    _loadTodayAppointments();
   }
 
   @override
@@ -73,11 +64,9 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
     super.dispose();
   }
 
-  Future<void> _loadAppointments() async {
+  Future<void> _loadTodayAppointments() async {
     try {
       final token = await ApiService.getAccessToken();
-      print('Access Token: $token'); // ✅ Dart syntax
-
       if (token == null) {
         setState(() {
           _errorMessage = 'Authentication required';
@@ -87,7 +76,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
       }
 
       final response = await http.get(
-        Uri.parse('${ApiService.baseUrl}/therapist/bookings'),
+        Uri.parse('${ApiService.baseUrl}/therapist/bookings/today'),
         headers: ApiService.getAuthHeaders(token),
       );
 
@@ -95,14 +84,14 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
 
       if (response.statusCode == 200 && responseData['success'] == true) {
         setState(() {
-          _appointments = responseData['data'] ?? [];
-          _filterAppointments();
+          _todayAppointments = responseData['data'] ?? [];
+          _meta = responseData['meta'];
           _isLoading = false;
         });
       } else {
         setState(() {
           _errorMessage =
-              responseData['message'] ?? 'Unable to load appointments';
+              responseData['message'] ?? 'Unable to load today\'s appointments';
           _isLoading = false;
         });
       }
@@ -114,53 +103,12 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
     }
   }
 
-  void _filterAppointments() {
-    if (_selectedStatus == 'all') {
-      _filteredAppointments = List.from(_appointments);
-    } else {
-      _filteredAppointments = _appointments
-          .where(
-            (appointment) =>
-                appointment['status'].toString().toLowerCase() ==
-                _selectedStatus,
-          )
-          .toList();
-    }
-  }
-
-  void _onStatusFilterChanged(String status) {
-    setState(() {
-      _selectedStatus = status;
-      _filterAppointments();
-    });
-  }
-
   Future<void> _refreshAppointments() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
-    await _loadAppointments();
-  }
-
-  String _formatDate(String dateString) {
-    try {
-      final date = DateTime.parse(dateString);
-      final now = DateTime.now();
-      final difference = date.difference(now).inDays;
-
-      if (difference == 0) {
-        return 'Today';
-      } else if (difference == 1) {
-        return 'Tomorrow';
-      } else if (difference == -1) {
-        return 'Yesterday';
-      } else {
-        return '${date.day}/${date.month}/${date.year}';
-      }
-    } catch (e) {
-      return dateString;
-    }
+    await _loadTodayAppointments();
   }
 
   String _formatTime(String timeString) {
@@ -173,6 +121,23 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
       return '$displayHour:$minute $period';
     } catch (e) {
       return timeString;
+    }
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final appointmentDate = DateTime(date.year, date.month, date.day);
+
+      if (appointmentDate == today) {
+        return 'Today';
+      } else {
+        return '${date.day}/${date.month}/${date.year}';
+      }
+    } catch (e) {
+      return dateString;
     }
   }
 
@@ -210,7 +175,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
         backgroundColor: _cardColor,
         foregroundColor: _textPrimary,
         title: const Text(
-          'My Appointments',
+          'Today\'s Appointments',
           style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
         ),
         elevation: 0,
@@ -232,107 +197,88 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
           position: _slideAnimation,
           child: Column(
             children: [
-              // Status Filter Dropdown
-              Container(
-                margin: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: _cardColor,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _borderColor, width: 1),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.02),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
+              // Date and Stats Header
+              if (_meta != null) ...[
+                Container(
+                  margin: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [_primaryColor, _primaryColor.withOpacity(0.8)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.filter_list_rounded,
-                      size: 18,
-                      color: _textSecondary,
-                    ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      'Filter:',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: _textSecondary,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _primaryColor.withOpacity(0.2),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedStatus,
-                          onChanged: (String? newValue) {
-                            if (newValue != null) {
-                              _onStatusFilterChanged(newValue);
-                            }
-                          },
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: _textPrimary,
-                          ),
-                          icon: Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            size: 20,
-                            color: _textSecondary,
-                          ),
-                          isDense: true,
-                          items: _statusFilters.map<DropdownMenuItem<String>>((
-                            filter,
-                          ) {
-                            return DropdownMenuItem<String>(
-                              value: filter['value'],
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(
+                          Icons.today_rounded,
+                          size: 32,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Today\'s Schedule',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _formatDate(_meta!['date'] ?? ''),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
                               child: Text(
-                                filter['label']!,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: _selectedStatus == filter['value']
-                                      ? _primaryColor
-                                      : _textPrimary,
+                                '${_meta!['total_bookings'] ?? 0} appointments',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                            );
-                          }).toList(),
-                          dropdownColor: _cardColor,
-                          borderRadius: BorderRadius.circular(12),
-                          elevation: 8,
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                    // Show count badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _primaryColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${_filteredAppointments.length}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: _primaryColor,
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+              ],
 
               // Appointments List
               Expanded(
@@ -345,7 +291,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
                       )
                     : _errorMessage != null
                     ? _buildErrorState()
-                    : _filteredAppointments.isEmpty
+                    : _todayAppointments.isEmpty
                     ? _buildEmptyState()
                     : _buildAppointmentsList(),
               ),
@@ -439,23 +385,19 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
               ),
             ),
             const SizedBox(height: 24),
-            Text(
-              _selectedStatus == 'all'
-                  ? 'No appointments yet'
-                  : 'No ${_statusFilters.firstWhere((f) => f['value'] == _selectedStatus)['label']?.toLowerCase()} appointments',
-              style: const TextStyle(
+            const Text(
+              'No appointments today',
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: _textPrimary,
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              _selectedStatus == 'all'
-                  ? 'Your upcoming appointments\nwill appear here'
-                  : 'Try selecting a different status filter',
+            const Text(
+              'You have a free day!\nEnjoy your time off.',
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 color: _textSecondary,
                 height: 1.4,
@@ -490,10 +432,10 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
       color: _primaryColor,
       child: ListView.separated(
         padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
-        itemCount: _filteredAppointments.length,
+        itemCount: _todayAppointments.length,
         separatorBuilder: (context, index) => const SizedBox(height: 16),
         itemBuilder: (context, index) {
-          final appointment = _filteredAppointments[index];
+          final appointment = _todayAppointments[index];
           return _buildAppointmentCard(appointment);
         },
       ),
@@ -574,43 +516,77 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
 
             const SizedBox(height: 20),
 
-            // Date and time row
+            // Time and service details
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: _surfaceColor,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  Icon(
-                    Icons.calendar_today_rounded,
-                    size: 18,
-                    color: _textSecondary,
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.access_time_rounded,
+                        size: 18,
+                        color: _textSecondary,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        _formatTime(appointment['time'] ?? ''),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: _textPrimary,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (appointment['service']['duration'] != null) ...[
+                        Icon(
+                          Icons.schedule_rounded,
+                          size: 16,
+                          color: _textSecondary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${appointment['service']['duration']} min',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: _textSecondary,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Text(
-                    _formatDate(appointment['date'] ?? ''),
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: _textPrimary,
-                    ),
-                  ),
-                  const Spacer(),
-                  Icon(
-                    Icons.access_time_rounded,
-                    size: 18,
-                    color: _textSecondary,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    _formatTime(appointment['time'] ?? ''),
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: _textPrimary,
-                    ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.medical_services_rounded,
+                        size: 18,
+                        color: _textSecondary,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          appointment['service']['title'] ?? 'Service',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: _textPrimary,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '£${appointment['price'] ?? '0'}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: _primaryColor,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -618,71 +594,9 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
 
             const SizedBox(height: 16),
 
-            // Service details
+            // Contact and notes
             Row(
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Service',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: _textSecondary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        appointment['service']['title'] ?? 'Service',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: _textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Price',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: _textSecondary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '£${appointment['price'] ?? '0'}',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: _primaryColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-
-            // Duration and contact
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                if (appointment['service']['duration'] != null) ...[
-                  Icon(Icons.schedule_rounded, size: 16, color: _textSecondary),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${appointment['service']['duration']} min',
-                    style: const TextStyle(fontSize: 14, color: _textSecondary),
-                  ),
-                  const SizedBox(width: 24),
-                ],
                 Icon(Icons.phone_rounded, size: 16, color: _textSecondary),
                 const SizedBox(width: 8),
                 Expanded(
@@ -694,6 +608,40 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
               ],
             ),
 
+            if (appointment['notes'] != null &&
+                appointment['notes'].isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.note_rounded,
+                      size: 16,
+                      color: Colors.amber[700],
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        appointment['notes'],
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.amber[700],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             const SizedBox(height: 20),
 
             // Action buttons
@@ -703,42 +651,40 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
                   child: OutlinedButton(
                     onPressed: () => _showAppointmentDetails(appointment),
                     style: OutlinedButton.styleFrom(
-                      backgroundColor: const Color(0xFF059669),
-                      foregroundColor: Colors.white,
+                      foregroundColor: _primaryColor,
                       side: const BorderSide(color: _borderColor),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'View Details',
-                      style: TextStyle(fontWeight: FontWeight.w500),
+                      style: const TextStyle(fontWeight: FontWeight.w500),
                     ),
                   ),
                 ),
                 // Show confirm button only for pending status
-                // if (appointment['can_update_status'] == true &&
-                //     status.toLowerCase() == 'pending') ...[
-                //   const SizedBox(width: 12),
-                //   Expanded(
-                //     child: FilledButton(
-                //       onPressed: () => _confirmAppointment(appointment),
-                //       style: FilledButton.styleFrom(
-                //         backgroundColor: const Color(0xFF059669),
-                //         foregroundColor: Colors.white,
-                //         padding: const EdgeInsets.symmetric(vertical: 12),
-                //         shape: RoundedRectangleBorder(
-                //           borderRadius: BorderRadius.circular(12),
-                //         ),
-                //       ),
-                //       child: const Text(
-                //         'Confirm',
-                //         style: TextStyle(fontWeight: FontWeight.w500),
-                //       ),
-                //     ),
-                //   ),
-                // ],
+                if (status.toLowerCase() == 'confirmed') ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => _confirmAppointment(appointment),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF059669),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Start Session',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ],
@@ -840,7 +786,6 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
                           ],
                         ),
                       ),
-
                       const SizedBox(width: 8),
                       IconButton(
                         onPressed: () => Navigator.of(context).pop(),
@@ -869,36 +814,10 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
                           'Phone',
                           appointment['customer_phone'] ?? 'N/A',
                         ),
-
-                        const SizedBox(height: 16),
-                        Container(
-                          width: double.infinity,
-                          height: 1,
-                          color: _borderColor.withOpacity(0.5),
-                        ),
-                        const SizedBox(height: 16),
-
-                        _buildDetailRow(
-                          'Date',
-                          _formatDate(appointment['date'] ?? ''),
-                        ),
                         _buildDetailRow(
                           'Time',
                           _formatTime(appointment['time'] ?? ''),
                         ),
-                        _buildDetailRow(
-                          'Status',
-                          _getStatusDisplayText(appointment['status'] ?? 'N/A'),
-                        ),
-
-                        const SizedBox(height: 16),
-                        Container(
-                          width: double.infinity,
-                          height: 1,
-                          color: _borderColor.withOpacity(0.5),
-                        ),
-                        const SizedBox(height: 16),
-
                         _buildDetailRow(
                           'Service',
                           appointment['service']['title'] ?? 'N/A',
@@ -911,58 +830,9 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
                           'Price',
                           '£${appointment['price'] ?? '0'}',
                         ),
-
-                        if (appointment['address'] != null) ...[
-                          const SizedBox(height: 16),
-                          Container(
-                            width: double.infinity,
-                            height: 1,
-                            color: _borderColor.withOpacity(0.5),
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Address',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: _textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: _surfaceColor,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: _borderColor.withOpacity(0.5),
-                              ),
-                            ),
-                            child: Text(
-                              '${appointment['address']['line1'] ?? ''}\n'
-                              '${appointment['address']['line2'] ?? ''}\n'
-                              '${appointment['address']['city'] ?? ''}, ${appointment['address']['postcode'] ?? ''}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: _textPrimary,
-                                height: 1.4,
-                              ),
-                            ),
-                          ),
-                        ],
-
                         if (appointment['notes'] != null &&
-                            appointment['notes'].isNotEmpty) ...[
-                          const SizedBox(height: 16),
-                          Container(
-                            width: double.infinity,
-                            height: 1,
-                            color: _borderColor.withOpacity(0.5),
-                          ),
-                          const SizedBox(height: 16),
+                            appointment['notes'].isNotEmpty)
                           _buildDetailRow('Notes', appointment['notes']),
-                        ],
                       ],
                     ),
                   ),
@@ -978,8 +848,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
                   ),
                   child: Row(
                     children: [
-                      if (appointment['can_update_status'] == true &&
-                          status.toLowerCase() == 'pending') ...[
+                      if (status.toLowerCase() == 'pending') ...[
                         Expanded(
                           child: OutlinedButton.icon(
                             onPressed: () {
@@ -994,9 +863,12 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            icon: const Icon(Icons.check_rounded, size: 18),
+                            icon: const Icon(
+                              Icons.play_arrow_rounded,
+                              size: 18,
+                            ),
                             label: const Text(
-                              'Confirm',
+                              'Start Session',
                               style: TextStyle(fontWeight: FontWeight.w600),
                             ),
                           ),
@@ -1068,15 +940,16 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
           title: const Text(
-            'Confirm Appointment',
+            'Start Treatment Session',
             style: TextStyle(fontWeight: FontWeight.w600, color: _textPrimary),
           ),
           content: Text(
-            'Are you sure you want to confirm this appointment with ${appointment['customer_name']}?',
+            'Ready to start the treatment session for ${appointment['customer_name']}?\n\nService: ${appointment['service']['title']}\nDuration: ${appointment['service']['duration']} minutes',
             style: const TextStyle(color: _textSecondary),
           ),
           actions: [
@@ -1088,27 +961,23 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
             FilledButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                // Update the appointment status locally and refresh the list
-                setState(() {
-                  appointment['status'] = 'confirmed';
-                  _filterAppointments();
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Appointment confirmed'),
-                    backgroundColor: const Color(0xFF059669),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                // Navigate to treatment session screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        TreatmentSessionScreen(appointment: appointment),
                   ),
-                );
+                ).then((_) {
+                  // Refresh appointments when returning from session
+                  _refreshAppointments();
+                });
               },
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF059669),
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Confirm'),
+              child: const Text('Start Session'),
             ),
           ],
         );

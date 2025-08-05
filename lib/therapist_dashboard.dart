@@ -4,6 +4,7 @@ import 'my_appointments_screen.dart';
 import 'my_services_screen.dart';
 import 'my_availability_screen.dart';
 import 'my_profile_screen.dart';
+import 'today_appointments_screen.dart'; // Add this import
 
 class TherapistDashboard extends StatefulWidget {
   final Map<String, dynamic> therapistData;
@@ -116,6 +117,15 @@ class _TherapistDashboardState extends State<TherapistDashboard>
     );
   }
 
+  void _navigateToTodayAppointments() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TodayAppointmentsScreen(therapistData: widget.therapistData),
+      ),
+    );
+  }
+
   void _navigateToAppointments() {
     Navigator.push(
       context,
@@ -218,6 +228,10 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                 _buildWelcomeHeader(therapist),
                 const SizedBox(height: 24),
 
+                // Today's Appointments Button - Featured
+                _buildTodayAppointmentsButton(),
+                const SizedBox(height: 24),
+
                 // Quick Stats
                 _buildQuickStats(services, therapist),
                 const SizedBox(height: 24),
@@ -238,6 +252,87 @@ class _TherapistDashboardState extends State<TherapistDashboard>
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTodayAppointmentsButton() {
+    return GestureDetector(
+      onTap: _navigateToTodayAppointments,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              _successColor,
+              _successColor.withOpacity(0.8),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: _successColor.withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.today_rounded,
+                size: 32,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Today\'s Appointments',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'View your schedule for today',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.arrow_forward_rounded,
+                size: 20,
+                color: Colors.white,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -353,8 +448,16 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                   onTap: () => Navigator.pop(context),
                 ),
                 _buildDrawerItem(
+                  icon: Icons.today_rounded,
+                  title: 'Today\'s Appointments',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _navigateToTodayAppointments();
+                  },
+                ),
+                _buildDrawerItem(
                   icon: Icons.calendar_today_rounded,
-                  title: 'My Appointments',
+                  title: 'All Appointments',
                   onTap: () {
                     Navigator.pop(context);
                     _navigateToAppointments();
@@ -679,7 +782,7 @@ class _TherapistDashboardState extends State<TherapistDashboard>
           children: [
             Expanded(
               child: _buildActionCard(
-                title: 'Appointments',
+                title: 'All Appointments',
                 subtitle: 'View & manage',
                 icon: Icons.calendar_today_rounded,
                 color: _primaryColor,
