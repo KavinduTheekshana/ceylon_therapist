@@ -15,12 +15,15 @@ class ApiService {
     'Authorization': 'Bearer $token',
   };
 
-  // Login method
+  // Login method with better error handling
   static Future<Map<String, dynamic>> login({
     required String email,
     required String password,
   }) async {
     try {
+      print('🔄 Making login request to: $baseUrl/therapist/login');
+      print('📧 Email: $email');
+      
       final response = await http.post(
         Uri.parse('$baseUrl/therapist/login'),
         headers: headers,
@@ -30,20 +33,44 @@ class ApiService {
         }),
       );
 
+      print('📱 Response status code: ${response.statusCode}');
+      print('📄 Response body: ${response.body}');
+
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        return {
-          'success': true,
-          'data': responseData,
-        };
+        // Check if the API returns success in the response
+        if (responseData['success'] == true) {
+          return {
+            'success': true,
+            'data': responseData['data'],
+          };
+        } else {
+          return {
+            'success': false,
+            'message': responseData['message'] ?? 'Login failed',
+          };
+        }
       } else {
         return {
           'success': false,
-          'message': responseData['message'] ?? 'Login failed',
+          'message': responseData['message'] ?? 'Login failed with status ${response.statusCode}',
         };
       }
+    } on http.ClientException catch (e) {
+      print('❌ HTTP Client Error: $e');
+      return {
+        'success': false,
+        'message': 'Connection failed. Please check your internet connection.',
+      };
+    } on FormatException catch (e) {
+      print('❌ JSON Format Error: $e');
+      return {
+        'success': false,
+        'message': 'Invalid server response format.',
+      };
     } catch (e) {
+      print('❌ Unexpected Error: $e');
       return {
         'success': false,
         'message': 'Network error: ${e.toString()}',
@@ -149,15 +176,22 @@ class ApiService {
 
   // Save login data to SharedPreferences
   static Future<void> saveLoginData(Map<String, dynamic> loginData) async {
-    final prefs = await SharedPreferences.getInstance();
-    final therapistData = loginData['data']['therapist'];
-    final accessToken = loginData['data']['access_token'];
-    final tokenType = loginData['data']['token_type'];
-    
-    await prefs.setString('access_token', accessToken);
-    await prefs.setString('token_type', tokenType);
-    await prefs.setString('therapist_data', json.encode(therapistData));
-    await prefs.setBool('is_logged_in', true);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final therapistData = loginData['data']['therapist'];
+      final accessToken = loginData['data']['access_token'];
+      final tokenType = loginData['data']['token_type'];
+      
+      await prefs.setString('access_token', accessToken);
+      await prefs.setString('token_type', tokenType);
+      await prefs.setString('therapist_data', json.encode(therapistData));
+      await prefs.setBool('is_logged_in', true);
+      
+      print('✅ Login data saved successfully');
+    } catch (e) {
+      print('❌ Error saving login data: $e');
+      throw Exception('Failed to save login data');
+    }
   }
 
   // Get stored access token
@@ -433,6 +467,35 @@ class ApiService {
       return {
         'success': false,
         'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Test connection method
+  static Future<Map<String, dynamic>> testConnection() async {
+    try {
+      print('🧪 Testing connection to: $baseUrl');
+      
+      final response = await http.get(
+        Uri.parse('$baseUrl/test'), // Add a test endpoint if available
+        headers: headers,
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          throw Exception('Connection timeout');
+        },
+      );
+
+    
+      return {
+        'success': response.statusCode == 200,
+        'message': 'Connection ${response.statusCode == 200 ? 'successful' : 'failed'}',
+      };
+    } catch (e) {
+
+      return {
+        'success': false,
+        'message': 'Connection failed: ${e.toString()}',
       };
     }
   }

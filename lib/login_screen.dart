@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'forgot_password_screen.dart';
 import 'therapist_dashboard.dart';
+import 'api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -102,31 +100,19 @@ class _LoginScreenState extends State<LoginScreen>
     });
 
     try {
-      final response = await http.post(
-        Uri.parse('http://192.168.0.213:8000/api/therapist/login'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: json.encode({
-          'email': _emailController.text.trim(),
-          'password': _passwordController.text,
-        }),
+      // Use ApiService instead of direct HTTP call
+      final result = await ApiService.login(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
       );
 
-      final responseData = json.decode(response.body);
-
-      if (response.statusCode == 200 && responseData['success'] == true) {
-        // Save user data and token
-        final prefs = await SharedPreferences.getInstance();
-        final therapistData = responseData['data']['therapist'];
-        final accessToken = responseData['data']['access_token'];
+      if (result['success']) {
+        // Save login data using ApiService
+        await ApiService.saveLoginData(result);
         
-        await prefs.setString('access_token', accessToken);
-        await prefs.setString('token_type', responseData['data']['token_type']);
-        await prefs.setString('therapist_data', json.encode(therapistData));
-        await prefs.setBool('is_logged_in', true);
-
+        // Get therapist data from the response
+        final therapistData = result['data']['therapist'];
+        
         // Navigate to dashboard
         if (mounted) {
           Navigator.pushReplacement(
@@ -138,7 +124,7 @@ class _LoginScreenState extends State<LoginScreen>
         }
       } else {
         setState(() {
-          _generalError = responseData['message'] ?? 'Login failed. Please try again.';
+          _generalError = result['message'] ?? 'Login failed. Please try again.';
         });
       }
     } catch (e) {

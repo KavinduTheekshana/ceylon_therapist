@@ -78,6 +78,7 @@ class _TherapistDashboardState extends State<TherapistDashboard>
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
