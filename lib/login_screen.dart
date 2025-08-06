@@ -103,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen>
 
     try {
       final response = await http.post(
-        Uri.parse('http://127.0.0.1:8000/api/therapist/login'),
+        Uri.parse('http://192.168.0.213:8000/api/therapist/login'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',

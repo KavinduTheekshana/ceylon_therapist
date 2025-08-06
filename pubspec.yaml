@@ -31,6 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_svg: ^2.0.10
+  audioplayers: ^5.0.0
 
    # HTTP requests
   http: ^1.1.0

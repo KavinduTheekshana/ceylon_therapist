@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:async';
 import 'api_service.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 class TreatmentSessionScreen extends StatefulWidget {
   final Map<String, dynamic> appointment;
@@ -26,6 +28,9 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
   bool _isTimerRunning = false;
   bool _isTimerStarted = false;
   bool _isCompleted = false;
+  
+  // Audio player for completion sound
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   // Modern color scheme
   static const Color _primaryColor = Color(0xFF2563EB);
@@ -70,6 +75,7 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
   @override
   void dispose() {
     _timer?.cancel();
+    _audioPlayer.dispose();
     _animationController.dispose();
     super.dispose();
   }
@@ -86,6 +92,21 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
       setState(() {
         if (_remainingSeconds > 0) {
           _remainingSeconds--;
+          
+          // Play warning sounds at specific intervals
+          if (_remainingSeconds == 60) {
+            // 1 minute warning
+            HapticFeedback.mediumImpact();
+            SystemSound.play(SystemSoundType.alert);
+          } else if (_remainingSeconds == 30) {
+            // 30 seconds warning
+            HapticFeedback.mediumImpact();
+            SystemSound.play(SystemSoundType.alert);
+          } else if (_remainingSeconds <= 10 && _remainingSeconds > 0) {
+            // Final 10 seconds countdown
+            HapticFeedback.lightImpact();
+            SystemSound.play(SystemSoundType.alert);
+          }
         } else {
           _completeSession();
         }
@@ -114,7 +135,63 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
       _remainingSeconds = 0;
     });
 
-    // Show completion dialog - API call will happen when user presses "Confirm"
+    // Play completion sound and vibrate first
+    await _playCompletionAlert();
+
+    // Then show completion dialog (removed duplicate call)
+    _showCompletionDialog();
+  }
+
+  Future<void> _playCompletionAlert() async {
+    try {
+      // Multiple alert patterns for better notification
+      print('Playing completion alert...');
+      
+      // First alert - immediate
+      SystemSound.play(SystemSoundType.alert);
+      await HapticFeedback.heavyImpact();
+      
+      // Create a sequence of alerts
+      for (int i = 0; i < 3; i++) {
+        await Future.delayed(const Duration(milliseconds: 400));
+        SystemSound.play(SystemSoundType.alert);
+        await HapticFeedback.mediumImpact();
+      }
+      
+      // Final strong vibration
+      await Future.delayed(const Duration(milliseconds: 200));
+      await HapticFeedback.heavyImpact();
+      
+      print('Completion alert finished');
+      
+    } catch (e) {
+      // Enhanced fallback with multiple attempts
+      print('Alert playback failed: $e');
+      try {
+        // Try different system sounds as fallback
+        SystemSound.play(SystemSoundType.click);
+        await Future.delayed(const Duration(milliseconds: 100));
+        SystemSound.play(SystemSoundType.click);
+        await HapticFeedback.heavyImpact();
+      } catch (e2) {
+        print('Fallback alert also failed: $e2');
+      }
+    }
+  }
+
+  // Separate method for manual completion (Complete Now button)
+  void _manualCompleteSession() async {
+    _timer?.cancel();
+    setState(() {
+      _isTimerRunning = false;
+      _isCompleted = true;
+      _remainingSeconds = 0;
+    });
+
+    // Play completion sound for manual completion too
+    await _playCompletionAlert();
+    
+    // Show completion dialog
     _showCompletionDialog();
   }
 
@@ -132,12 +209,7 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
         notes: notes,
       );
 
-      if (result['success']) {
-        // Show completion dialog only after successful API call
-        if (status == 'completed') {
-          _showCompletionDialog();
-        }
-      } else {
+      if (!result['success']) {
         _showErrorDialog(result['message'] ?? 'Failed to update booking status');
       }
     } catch (e) {
@@ -790,7 +862,7 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: _completeSession,
+                  onPressed: _manualCompleteSession, // Changed to use manual completion
                   style: OutlinedButton.styleFrom(
                     foregroundColor: _successColor,
                     side: const BorderSide(color: _successColor),
