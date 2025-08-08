@@ -139,6 +139,7 @@ class _MyServicesScreenState extends State<MyServicesScreen>
 
   String _formatDate(String dateString) {
     try {
+      if (dateString.isEmpty) return 'N/A';
       final date = DateTime.parse(dateString);
       return '${date.day}/${date.month}/${date.year}';
     } catch (e) {
@@ -186,31 +187,29 @@ class _MyServicesScreenState extends State<MyServicesScreen>
           const SizedBox(width: 8),
         ],
       ),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SlideTransition(
-          position: _slideAnimation,
-          child: _isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(
-                    color: _primaryColor,
-                    strokeWidth: 2,
-                  ),
-                )
-              : _errorMessage != null
-              ? _buildErrorState()
-              : _services.isEmpty
-              ? _buildEmptyState()
-              : _buildServicesContent(),
-        ),
+      body: AnimatedBuilder(
+        animation: _fadeAnimation,
+        builder: (context, child) {
+          return FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: _primaryColor,
+                      ),
+                    )
+                  : _errorMessage != null
+                      ? _buildErrorState()
+                      : _services.isEmpty
+                          ? _buildEmptyState()
+                          : _buildServicesContent(),
+            ),
+          );
+        },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddServiceDialog,
-        backgroundColor: _primaryColor,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Service'),
-      ),
+
     );
   }
 
@@ -338,23 +337,6 @@ class _MyServicesScreenState extends State<MyServicesScreen>
                 height: 1.4,
               ),
             ),
-            const SizedBox(height: 32),
-            FilledButton.icon(
-              onPressed: _showAddServiceDialog,
-              style: FilledButton.styleFrom(
-                backgroundColor: _primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 16,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              icon: const Icon(Icons.add_rounded, size: 18),
-              label: const Text('Add Your First Service'),
-            ),
           ],
         ),
       ),
@@ -419,8 +401,6 @@ class _MyServicesScreenState extends State<MyServicesScreen>
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 8),
-
                   ],
                 ),
               ),
@@ -441,8 +421,6 @@ class _MyServicesScreenState extends State<MyServicesScreen>
       ],
     );
   }
-
-
 
   Widget _buildServicesGrid() {
     return GridView.builder(
@@ -497,20 +475,14 @@ class _MyServicesScreenState extends State<MyServicesScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header with icon and menu
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(icon, size: 24, color: color),
-                  ),
-      
-                  
-                ],
+              // Header with icon
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, size: 24, color: color),
               ),
               const SizedBox(height: 16),
 
@@ -529,9 +501,9 @@ class _MyServicesScreenState extends State<MyServicesScreen>
 
               // Description
               if (service['description'] != null &&
-                  service['description'].isNotEmpty) ...[
+                  service['description'].toString().isNotEmpty) ...[
                 Text(
-                  service['description'],
+                  service['description'].toString(),
                   style: const TextStyle(
                     fontSize: 13,
                     color: _textSecondary,
@@ -635,9 +607,9 @@ class _MyServicesScreenState extends State<MyServicesScreen>
                     ),
                     const SizedBox(height: 4),
                     if (service['description'] != null &&
-                        service['description'].isNotEmpty) ...[
+                        service['description'].toString().isNotEmpty) ...[
                       Text(
-                        service['description'],
+                        service['description'].toString(),
                         style: const TextStyle(
                           fontSize: 14,
                           color: _textSecondary,
@@ -683,17 +655,12 @@ class _MyServicesScreenState extends State<MyServicesScreen>
                   ],
                 ),
               ),
-
-              // Menu button
-           
             ],
           ),
         ),
       ),
     );
   }
-
-
 
   void _showServiceDetails(Map<String, dynamic> service) {
     showDialog(
@@ -745,19 +712,13 @@ class _MyServicesScreenState extends State<MyServicesScreen>
                       ),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              service['title'] ?? 'Service Details',
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                          ],
+                        child: Text(
+                          service['title'] ?? 'Service Details',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                       IconButton(
@@ -868,7 +829,7 @@ class _MyServicesScreenState extends State<MyServicesScreen>
 
                         // Description Section
                         if (service['description'] != null &&
-                            service['description'].isNotEmpty) ...[
+                            service['description'].toString().isNotEmpty) ...[
                           const Text(
                             'Description',
                             style: TextStyle(
@@ -889,7 +850,7 @@ class _MyServicesScreenState extends State<MyServicesScreen>
                               ),
                             ),
                             child: Text(
-                              service['description'],
+                              service['description'].toString(),
                               style: const TextStyle(
                                 fontSize: 14,
                                 color: _textPrimary,
@@ -902,7 +863,7 @@ class _MyServicesScreenState extends State<MyServicesScreen>
 
                         // Benefits Section
                         if (service['benefits'] != null &&
-                            service['benefits'].isNotEmpty) ...[
+                            service['benefits'].toString().isNotEmpty) ...[
                           const Text(
                             'Benefits',
                             style: TextStyle(
@@ -933,7 +894,7 @@ class _MyServicesScreenState extends State<MyServicesScreen>
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
-                                    service['benefits'],
+                                    service['benefits'].toString(),
                                     style: const TextStyle(
                                       fontSize: 14,
                                       color: _textPrimary,
@@ -971,13 +932,13 @@ class _MyServicesScreenState extends State<MyServicesScreen>
                               _buildDetailRow(
                                 'Added On',
                                 _formatDate(
-                                  service['pivot']?['created_at'] ?? '',
+                                  service['pivot']?['created_at']?.toString() ?? '',
                                 ),
                               ),
                               _buildDetailRow(
                                 'Last Updated',
                                 _formatDate(
-                                  service['pivot']?['updated_at'] ?? '',
+                                  service['pivot']?['updated_at']?.toString() ?? '',
                                 ),
                               ),
                             ],
@@ -1057,560 +1018,4 @@ class _MyServicesScreenState extends State<MyServicesScreen>
         ],
       ),
     );
-  }
-
-  void _showAddServiceDialog() {
-    final titleController = TextEditingController();
-    final descriptionController = TextEditingController();
-    final benefitsController = TextEditingController();
-    final durationController = TextEditingController();
-    final priceController = TextEditingController();
-    bool isLoading = false;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              title: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: _primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.add_rounded,
-                      color: _primaryColor,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Add New Service',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: _textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-              content: SizedBox(
-                width: MediaQuery.of(context).size.width * 0.9,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: titleController,
-                        decoration: InputDecoration(
-                          labelText: 'Service Title',
-                          hintText: 'e.g., Deep Tissue Massage',
-                          prefixIcon: const Icon(
-                            Icons.medical_services_rounded,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: _primaryColor),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: descriptionController,
-                        decoration: InputDecoration(
-                          labelText: 'Description',
-                          hintText: 'Describe your service...',
-                          prefixIcon: const Icon(Icons.description_rounded),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: _primaryColor),
-                          ),
-                        ),
-                        maxLines: 3,
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: benefitsController,
-                        decoration: InputDecoration(
-                          labelText: 'Benefits',
-                          hintText: 'List the key benefits...',
-                          prefixIcon: const Icon(Icons.check_circle_rounded),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: _primaryColor),
-                          ),
-                        ),
-                        maxLines: 2,
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: durationController,
-                              decoration: InputDecoration(
-                                labelText: 'Duration (min)',
-                                hintText: '30',
-                                prefixIcon: const Icon(Icons.schedule_rounded),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: _primaryColor,
-                                  ),
-                                ),
-                              ),
-                              keyboardType: TextInputType.number,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: TextField(
-                              controller: priceController,
-                              decoration: InputDecoration(
-                                labelText: 'Price (£)',
-                                hintText: '50.00',
-                                prefixIcon: const Icon(Icons.payments_rounded),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: _primaryColor,
-                                  ),
-                                ),
-                              ),
-                              keyboardType: TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: isLoading
-                      ? null
-                      : () => Navigator.of(context).pop(),
-                  style: TextButton.styleFrom(foregroundColor: _textSecondary),
-                  child: const Text('Cancel'),
-                ),
-                FilledButton(
-                  onPressed: isLoading
-                      ? null
-                      : () async {
-                          if (titleController.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text(
-                                  'Please enter a service title',
-                                ),
-                                backgroundColor: _errorColor,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            );
-                            return;
-                          }
-
-                          setState(() {
-                            isLoading = true;
-                          });
-
-                          // Simulate API call (implement actual API call)
-                          await Future.delayed(const Duration(seconds: 1));
-
-                          Navigator.of(context).pop();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text(
-                                'Add service feature coming soon',
-                              ),
-                              backgroundColor: _primaryColor,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          );
-
-                          setState(() {
-                            isLoading = false;
-                          });
-                        },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: _primaryColor,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: isLoading
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
-                      : const Text(
-                          'Add Service',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _editService(Map<String, dynamic> service) {
-    final titleController = TextEditingController(text: service['title'] ?? '');
-    final descriptionController = TextEditingController(
-      text: service['description'] ?? '',
-    );
-    final benefitsController = TextEditingController(
-      text: service['benefits'] ?? '',
-    );
-    final durationController = TextEditingController(
-      text: service['duration']?.toString() ?? '',
-    );
-    final priceController = TextEditingController(
-      text: service['price']?.toString() ?? '',
-    );
-    bool isLoading = false;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              title: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: _warningColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.edit_rounded,
-                      color: _warningColor,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Edit Service',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: _textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-              content: SizedBox(
-                width: MediaQuery.of(context).size.width * 0.9,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: titleController,
-                        decoration: InputDecoration(
-                          labelText: 'Service Title',
-                          prefixIcon: const Icon(
-                            Icons.medical_services_rounded,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: _primaryColor),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: descriptionController,
-                        decoration: InputDecoration(
-                          labelText: 'Description',
-                          prefixIcon: const Icon(Icons.description_rounded),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: _primaryColor),
-                          ),
-                        ),
-                        maxLines: 3,
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: benefitsController,
-                        decoration: InputDecoration(
-                          labelText: 'Benefits',
-                          prefixIcon: const Icon(Icons.check_circle_rounded),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: _primaryColor),
-                          ),
-                        ),
-                        maxLines: 2,
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: durationController,
-                              decoration: InputDecoration(
-                                labelText: 'Duration (min)',
-                                prefixIcon: const Icon(Icons.schedule_rounded),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: _primaryColor,
-                                  ),
-                                ),
-                              ),
-                              keyboardType: TextInputType.number,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: TextField(
-                              controller: priceController,
-                              decoration: InputDecoration(
-                                labelText: 'Price (£)',
-                                prefixIcon: const Icon(Icons.payments_rounded),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: _primaryColor,
-                                  ),
-                                ),
-                              ),
-                              keyboardType: TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: isLoading
-                      ? null
-                      : () => Navigator.of(context).pop(),
-                  style: TextButton.styleFrom(foregroundColor: _textSecondary),
-                  child: const Text('Cancel'),
-                ),
-                FilledButton(
-                  onPressed: isLoading
-                      ? null
-                      : () async {
-                          setState(() {
-                            isLoading = true;
-                          });
-
-                          // Simulate API call (implement actual API call)
-                          await Future.delayed(const Duration(seconds: 1));
-
-                          Navigator.of(context).pop();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text(
-                                'Edit service feature coming soon',
-                              ),
-                              backgroundColor: _warningColor,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          );
-
-                          setState(() {
-                            isLoading = false;
-                          });
-                        },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: _warningColor,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: isLoading
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
-                      : const Text(
-                          'Update Service',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _deleteService(Map<String, dynamic> service) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: _errorColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.delete_rounded,
-                  color: _errorColor,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Delete Service',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: _errorColor,
-                ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Are you sure you want to delete "${service['title']}"?',
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: _textPrimary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: _errorColor.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: _errorColor.withOpacity(0.2)),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.warning_rounded, color: _errorColor, size: 16),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'This action cannot be undone and will remove all associated data.',
-                        style: TextStyle(fontSize: 13, color: _errorColor),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(foregroundColor: _textSecondary),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Delete service feature coming soon'),
-                    backgroundColor: _errorColor,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                );
-              },
-              style: FilledButton.styleFrom(
-                backgroundColor: _errorColor,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text(
-                'Delete Service',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
+  }}
