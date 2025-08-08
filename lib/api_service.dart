@@ -107,6 +107,159 @@ class ApiService {
     }
   }
 
+// Add these methods to your existing ApiService class in api_service.dart
+
+// Get holiday requests for therapist
+static Future<Map<String, dynamic>> getHolidayRequests() async {
+  try {
+    final token = await getAccessToken();
+    if (token == null) {
+      return {
+        'success': false,
+        'message': 'No access token found',
+      };
+    }
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/therapist/holiday-requests'),
+      headers: getAuthHeaders(token),
+    );
+
+    final responseData = json.decode(response.body);
+
+    if (response.statusCode == 200) {
+      return {
+        'success': true,
+        'data': responseData['data'],
+      };
+    } else {
+      return {
+        'success': false,
+        'message': responseData['message'] ?? 'Failed to get holiday requests',
+      };
+    }
+  } catch (e) {
+    return {
+      'success': false,
+      'message': 'Network error: ${e.toString()}',
+    };
+  }
+}
+
+// Get holidays for calendar view
+static Future<Map<String, dynamic>> getCalendarHolidays() async {
+  try {
+    final token = await getAccessToken();
+    if (token == null) {
+      return {
+        'success': false,
+        'message': 'No access token found',
+      };
+    }
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/therapist/holiday-requests/calendar'),
+      headers: getAuthHeaders(token),
+    );
+
+    final responseData = json.decode(response.body);
+
+    if (response.statusCode == 200) {
+      return {
+        'success': true,
+        'data': responseData['data'],
+      };
+    } else {
+      return {
+        'success': false,
+        'message': responseData['message'] ?? 'Failed to get calendar holidays',
+      };
+    }
+  } catch (e) {
+    return {
+      'success': false,
+      'message': 'Network error: ${e.toString()}',
+    };
+  }
+}
+
+// Submit holiday request
+static Future<Map<String, dynamic>> requestHoliday({
+  required String date, // Format: 'YYYY-MM-DD'
+  required String reason,
+}) async {
+  try {
+    final token = await getAccessToken();
+    if (token == null) {
+      return {
+        'success': false,
+        'message': 'No access token found',
+      };
+    }
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/therapist/holiday-requests'),
+      headers: getAuthHeaders(token),
+      body: json.encode({
+        'date': date,
+        'reason': reason,
+      }),
+    );
+
+    final responseData = json.decode(response.body);
+
+    return {
+      'success': response.statusCode == 201 || response.statusCode == 200,
+      'message': responseData['message'] ?? (response.statusCode == 201 
+          ? 'Holiday request submitted successfully' 
+          : 'Failed to submit holiday request'),
+      'data': responseData['data'],
+    };
+  } catch (e) {
+    return {
+      'success': false,
+      'message': 'Network error: ${e.toString()}',
+    };
+  }
+}
+
+// Cancel holiday request
+static Future<Map<String, dynamic>> cancelHolidayRequest({
+  required int requestId,
+}) async {
+  try {
+    final token = await getAccessToken();
+    if (token == null) {
+      return {
+        'success': false,
+        'message': 'No access token found',
+      };
+    }
+
+    final response = await http.delete(
+      Uri.parse('$baseUrl/therapist/holiday-requests/$requestId'),
+      headers: getAuthHeaders(token),
+    );
+
+    final responseData = json.decode(response.body);
+
+    return {
+      'success': response.statusCode == 200,
+      'message': responseData['message'] ?? (response.statusCode == 200 
+          ? 'Holiday request cancelled successfully' 
+          : 'Failed to cancel holiday request'),
+    };
+  } catch (e) {
+    return {
+      'success': false,
+      'message': 'Network error: ${e.toString()}',
+    };
+  }
+}
+
+
+
+
   // Verify OTP method
   static Future<Map<String, dynamic>> verifyOTP({
     required String email,
@@ -410,6 +563,7 @@ class ApiService {
       );
 
       final responseData = json.decode(response.body);
+      print('📅 Availability response: $responseData');
 
       if (response.statusCode == 200) {
         return {
