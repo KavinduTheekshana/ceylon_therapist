@@ -3,11 +3,8 @@ import 'api_service.dart';
 
 class MyProfileScreen extends StatefulWidget {
   final Map<String, dynamic> therapistData;
-  
-  const MyProfileScreen({
-    super.key, 
-    required this.therapistData,
-  });
+
+  const MyProfileScreen({super.key, required this.therapistData});
 
   @override
   State<MyProfileScreen> createState() => _MyProfileScreenState();
@@ -18,11 +15,11 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  
+
   bool _isLoading = false;
   bool _isEditing = false;
   Map<String, dynamic> _profileData = {};
-  
+
   // Controllers for editing
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -32,24 +29,24 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   @override
   void initState() {
     super.initState();
-    
+
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutBack,
-    ));
-    
+
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutBack,
+          ),
+        );
+
     _animationController.forward();
     _initializeProfile();
   }
@@ -76,13 +73,13 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
       final result = await ApiService.getProfile();
-      
+
       if (result['success']) {
         setState(() {
-          _profileData = result['data']['therapist'];
+          _profileData = result['data']; // Fixed: Remove ['therapist']
           _initializeProfile();
           _isLoading = false;
         });
@@ -114,22 +111,36 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
       final result = await ApiService.updateProfile(
         name: _nameController.text.trim(),
-        email: _emailController.text.trim(),
         phone: _phoneController.text.trim(),
         bio: _bioController.text.trim(),
       );
-      
+
+      // ADD DEBUG LOGGING
+      print('Update result: $result');
+      print('Success: ${result['success']}');
+      if (result['success']) {
+        print('Data structure: ${result['data']}');
+      }
+
       if (result['success']) {
         setState(() {
-          _profileData = result['data']['therapist'];
+          if (result['data'] != null && result['data']['therapist'] != null) {
+            _profileData = result['data']['therapist'];
+          } else {
+            _profileData = result['data'];
+          }
+          _initializeProfile();
           _isEditing = false;
           _isLoading = false;
         });
-        
+
+        // ADD THIS LINE - Update local storage with new data
+        await ApiService.saveTherapistData(_profileData);
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Profile updated successfully'),
@@ -148,6 +159,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
         });
       }
     } catch (e) {
+      print('Error updating profile: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Failed to update profile'),
@@ -167,7 +179,8 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     });
   }
 
-  String _formatDate(String dateString) {
+  String _formatDate(String? dateString) {
+    if (dateString == null || dateString.isEmpty) return 'N/A';
     try {
       final date = DateTime.parse(dateString);
       return '${date.day}/${date.month}/${date.year}';
@@ -211,9 +224,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           position: _slideAnimation,
           child: _isLoading
               ? const Center(
-                  child: CircularProgressIndicator(
-                    color: Color(0xFF9A563A),
-                  ),
+                  child: CircularProgressIndicator(color: Color(0xFF9A563A)),
                 )
               : _buildProfileContent(),
         ),
@@ -223,7 +234,12 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
   Widget _buildProfileContent() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.only(
+        top: 16.0,
+        left: 16.0,
+        right: 16.0,
+        bottom: 44.0,
+      ),
       child: Column(
         children: [
           // Profile Header Card
@@ -262,7 +278,10 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                             : null,
                         child: _profileData['image'] == null
                             ? Text(
-                                _profileData['name']?.substring(0, 1).toUpperCase() ?? 'T',
+                                _profileData['name']
+                                        ?.substring(0, 1)
+                                        .toUpperCase() ??
+                                    'T',
                                 style: const TextStyle(
                                   fontSize: 36,
                                   fontWeight: FontWeight.bold,
@@ -279,7 +298,9 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                             onTap: () {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Change photo feature coming soon'),
+                                  content: Text(
+                                    'Change photo feature coming soon',
+                                  ),
                                   backgroundColor: Color(0xFF9A563A),
                                 ),
                               );
@@ -308,7 +329,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                     ],
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Name and Status
                   Text(
                     _profileData['name'] ?? 'Therapist',
@@ -320,13 +341,18 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                   ),
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      _profileData['status'] == true ? 'Active Therapist' : 'Inactive',
+                      _profileData['status'] == true
+                          ? 'Active Therapist'
+                          : 'Inactive',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,
@@ -341,18 +367,12 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           const SizedBox(height: 24),
 
           // Profile Information
-          if (_isEditing) 
-            _buildEditingForm() 
-          else 
-            _buildProfileInfo(),
-          
+          if (_isEditing) _buildEditingForm() else _buildProfileInfo(),
+
           const SizedBox(height: 24),
-          
+
           // Action Buttons
-          if (_isEditing) 
-            _buildEditingButtons() 
-          else 
-            _buildActionButtons(),
+          if (_isEditing) _buildEditingButtons() else _buildActionButtons(),
         ],
       ),
     );
@@ -362,42 +382,54 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     return Column(
       children: [
         // Basic Information
-        _buildInfoCard(
-          'Basic Information',
-          Icons.person,
-          [
-            _buildInfoRow('Full Name', _profileData['name'] ?? 'N/A'),
-            _buildInfoRow('Email', _profileData['email'] ?? 'N/A'),
-            _buildInfoRow('Phone', _profileData['phone'] ?? 'N/A'),
-            if (_profileData['bio'] != null && _profileData['bio'].isNotEmpty)
-              _buildInfoRow('Bio', _profileData['bio'], isExpandable: true),
-          ],
-        ),
+        _buildInfoCard('Basic Information', Icons.person, [
+          _buildInfoRow('Full Name', _profileData['name'] ?? 'N/A'),
+          _buildInfoRow('Email', _profileData['email'] ?? 'N/A'),
+          _buildInfoRow('Phone', _profileData['phone'] ?? 'N/A'),
+          if (_profileData['bio'] != null &&
+              _profileData['bio'].toString().isNotEmpty)
+            _buildInfoRow('Bio', _profileData['bio'], isExpandable: true),
+        ]),
         const SizedBox(height: 16),
 
         // Professional Information
-        _buildInfoCard(
-          'Professional Information',
-          Icons.work,
-          [
-            _buildInfoRow('Work Start Date', _formatDate(_profileData['work_start_date'] ?? '')),
-            _buildInfoRow('Services Offered', '${(_profileData['services'] as List?)?.length ?? 0} services'),
-            _buildInfoRow('Availability Slots', '${_profileData['availability_count'] ?? 0} slots'),
-            _buildInfoRow('Account Status', _profileData['status'] == true ? 'Active' : 'Inactive'),
-          ],
-        ),
+        _buildInfoCard('Professional Information', Icons.work, [
+          _buildInfoRow(
+            'Work Start Date',
+            _formatDate(_profileData['work_start_date']),
+          ),
+          _buildInfoRow(
+            'Services Offered',
+            '${(_profileData['services'] as List?)?.length ?? 0} services',
+          ),
+          _buildInfoRow(
+            'Availability Slots',
+            '${_profileData['availability_count'] ?? 0} slots',
+          ),
+          _buildInfoRow(
+            'Account Status',
+            _profileData['status'] == true ? 'Active' : 'Inactive',
+          ),
+        ]),
         const SizedBox(height: 16),
 
         // Account Information
-        _buildInfoCard(
-          'Account Information',
-          Icons.info,
-          [
-            _buildInfoRow('Email Verified', _profileData['email_verified_at'] != null ? 'Verified' : 'Not Verified'),
-            _buildInfoRow('Last Login', _formatDate(_profileData['last_login_at'] ?? '')),
-            _buildInfoRow('Member Since', _formatDate(_profileData['created_at'] ?? '')),
-          ],
-        ),
+        _buildInfoCard('Account Information', Icons.info, [
+          _buildInfoRow(
+            'Email Verified',
+            _profileData['email_verified_at'] != null
+                ? 'Verified'
+                : 'Not Verified',
+          ),
+          _buildInfoRow(
+            'Last Login',
+            _formatDate(_profileData['last_login_at']),
+          ),
+          _buildInfoRow(
+            'Member Since',
+            _formatDate(_profileData['created_at']),
+          ),
+        ]),
       ],
     );
   }
@@ -422,11 +454,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           children: [
             Row(
               children: [
-                const Icon(
-                  Icons.edit,
-                  color: Color(0xFF9A563A),
-                  size: 20,
-                ),
+                const Icon(Icons.edit, color: Color(0xFF9A563A), size: 20),
                 const SizedBox(width: 8),
                 const Text(
                   'Edit Profile',
@@ -439,7 +467,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
               ],
             ),
             const SizedBox(height: 20),
-            
+
             // Name field
             TextField(
               controller: _nameController,
@@ -456,25 +484,33 @@ class _MyProfileScreenState extends State<MyProfileScreen>
               ),
             ),
             const SizedBox(height: 16),
-            
-            // Email field
+
+            // Email field (read-only)
             TextField(
               controller: _emailController,
+              readOnly: true,
               keyboardType: TextInputType.emailAddress,
               decoration: InputDecoration(
                 labelText: 'Email',
                 prefixIcon: const Icon(Icons.email),
+                filled: true,
+                fillColor: Colors.grey[100],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFF9A563A)),
+                  borderSide: const BorderSide(color: Colors.grey),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Colors.grey),
                 ),
               ),
+              style: TextStyle(color: Colors.grey[600]),
             ),
             const SizedBox(height: 16),
-            
+
             // Phone field
             TextField(
               controller: _phoneController,
@@ -492,7 +528,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // Bio field
             TextField(
               controller: _bioController,
@@ -537,11 +573,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           children: [
             Row(
               children: [
-                Icon(
-                  icon,
-                  color: const Color(0xFF9A563A),
-                  size: 20,
-                ),
+                Icon(icon, color: const Color(0xFF9A563A), size: 20),
                 const SizedBox(width: 8),
                 Text(
                   title,
@@ -561,7 +593,11 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     );
   }
 
-  Widget _buildInfoRow(String label, String value, {bool isExpandable = false}) {
+  Widget _buildInfoRow(
+    String label,
+    String value, {
+    bool isExpandable = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -580,10 +616,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           ),
           Expanded(
             child: isExpandable
-                ? ExpandableText(
-                    text: value,
-                    maxLines: 2,
-                  )
+                ? ExpandableText(text: value, maxLines: 2)
                 : Text(
                     value,
                     style: const TextStyle(
@@ -676,7 +709,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           ),
         ),
         const SizedBox(height: 12),
-        
+
         // Settings Button
         SizedBox(
           width: double.infinity,
@@ -725,6 +758,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
+              backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
@@ -747,7 +781,9 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          showCurrentPassword ? Icons.visibility : Icons.visibility_off,
+                          showCurrentPassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
                         ),
                         onPressed: () {
                           setState(() {
@@ -761,7 +797,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // New Password
                   TextField(
                     controller: newPasswordController,
@@ -771,7 +807,9 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                       prefixIcon: const Icon(Icons.lock),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          showNewPassword ? Icons.visibility : Icons.visibility_off,
+                          showNewPassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
                         ),
                         onPressed: () {
                           setState(() {
@@ -785,7 +823,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Confirm Password
                   TextField(
                     controller: confirmPasswordController,
@@ -795,7 +833,9 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                       prefixIcon: const Icon(Icons.lock),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          showConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                          showConfirmPassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
                         ),
                         onPressed: () {
                           setState(() {
@@ -812,61 +852,68 @@ class _MyProfileScreenState extends State<MyProfileScreen>
               ),
               actions: [
                 TextButton(
-                  onPressed: isLoading ? null : () => Navigator.of(context).pop(),
+                  onPressed: isLoading
+                      ? null
+                      : () => Navigator.of(context).pop(),
                   child: const Text('Cancel'),
                 ),
                 TextButton(
-                  onPressed: isLoading ? null : () async {
-                    if (newPasswordController.text != confirmPasswordController.text) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Passwords do not match'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                      return;
-                    }
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (newPasswordController.text !=
+                              confirmPasswordController.text) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Passwords do not match'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
 
-                    setState(() {
-                      isLoading = true;
-                    });
+                          setState(() {
+                            isLoading = true;
+                          });
 
-                    try {
-                      final result = await ApiService.changePassword(
-                        currentPassword: currentPasswordController.text,
-                        newPassword: newPasswordController.text,
-                        confirmPassword: confirmPasswordController.text,
-                      );
+                          try {
+                            final result = await ApiService.changePassword(
+                              currentPassword: currentPasswordController.text,
+                              newPassword: newPasswordController.text,
+                              confirmPassword: confirmPasswordController.text,
+                            );
 
-                      if (result['success']) {
-                        Navigator.of(context).pop();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Password changed successfully'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(result['message']),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Failed to change password'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    } finally {
-                      setState(() {
-                        isLoading = false;
-                      });
-                    }
-                  },
+                            if (result['success']) {
+                              Navigator.of(context).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Password changed successfully',
+                                  ),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(result['message']),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Failed to change password'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          } finally {
+                            setState(() {
+                              isLoading = false;
+                            });
+                          }
+                        },
                   child: isLoading
                       ? const SizedBox(
                           width: 16,
@@ -894,11 +941,7 @@ class ExpandableText extends StatefulWidget {
   final String text;
   final int maxLines;
 
-  const ExpandableText({
-    super.key,
-    required this.text,
-    this.maxLines = 2,
-  });
+  const ExpandableText({super.key, required this.text, this.maxLines = 2});
 
   @override
   State<ExpandableText> createState() => _ExpandableTextState();
@@ -914,10 +957,7 @@ class _ExpandableTextState extends State<ExpandableText> {
       children: [
         Text(
           widget.text,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Color(0xFF1F2937),
-          ),
+          style: const TextStyle(fontSize: 14, color: Color(0xFF1F2937)),
           maxLines: _isExpanded ? null : widget.maxLines,
           overflow: _isExpanded ? null : TextOverflow.ellipsis,
         ),

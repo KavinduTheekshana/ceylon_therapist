@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   static const String baseUrl = 'http://127.0.0.1:8000/api';
-  
+
   static Map<String, String> get headers => {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -23,14 +23,11 @@ class ApiService {
     try {
       print('🔄 Making login request to: $baseUrl/therapist/login');
       print('📧 Email: $email');
-      
+
       final response = await http.post(
         Uri.parse('$baseUrl/therapist/login'),
         headers: headers,
-        body: json.encode({
-          'email': email,
-          'password': password,
-        }),
+        body: json.encode({'email': email, 'password': password}),
       );
 
       print('📱 Response status code: ${response.statusCode}');
@@ -41,10 +38,7 @@ class ApiService {
       if (response.statusCode == 200) {
         // Check if the API returns success in the response
         if (responseData['success'] == true) {
-          return {
-            'success': true,
-            'data': responseData['data'],
-          };
+          return {'success': true, 'data': responseData['data']};
         } else {
           return {
             'success': false,
@@ -54,7 +48,9 @@ class ApiService {
       } else {
         return {
           'success': false,
-          'message': responseData['message'] ?? 'Login failed with status ${response.statusCode}',
+          'message':
+              responseData['message'] ??
+              'Login failed with status ${response.statusCode}',
         };
       }
     } on http.ClientException catch (e) {
@@ -65,16 +61,10 @@ class ApiService {
       };
     } on FormatException catch (e) {
       print('❌ JSON Format Error: $e');
-      return {
-        'success': false,
-        'message': 'Invalid server response format.',
-      };
+      return {'success': false, 'message': 'Invalid server response format.'};
     } catch (e) {
       print('❌ Unexpected Error: $e');
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
@@ -86,179 +76,144 @@ class ApiService {
       final response = await http.post(
         Uri.parse('$baseUrl/therapist/forgot-password'),
         headers: headers,
-        body: json.encode({
-          'email': email,
-        }),
+        body: json.encode({'email': email}),
       );
 
       final responseData = json.decode(response.body);
 
       return {
         'success': response.statusCode == 200,
-        'message': responseData['message'] ?? (response.statusCode == 200 
-            ? 'Password reset code sent to your email' 
-            : 'Failed to send password reset code'),
+        'message':
+            responseData['message'] ??
+            (response.statusCode == 200
+                ? 'Password reset code sent to your email'
+                : 'Failed to send password reset code'),
       };
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
-// Add these methods to your existing ApiService class in api_service.dart
+  // Get holiday requests for therapist
+  static Future<Map<String, dynamic>> getHolidayRequests() async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) {
+        return {'success': false, 'message': 'No access token found'};
+      }
 
-// Get holiday requests for therapist
-static Future<Map<String, dynamic>> getHolidayRequests() async {
-  try {
-    final token = await getAccessToken();
-    if (token == null) {
-      return {
-        'success': false,
-        'message': 'No access token found',
-      };
+      final response = await http.get(
+        Uri.parse('$baseUrl/therapist/holiday-requests'),
+        headers: getAuthHeaders(token),
+      );
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': responseData['data']};
+      } else {
+        return {
+          'success': false,
+          'message':
+              responseData['message'] ?? 'Failed to get holiday requests',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
+  }
 
-    final response = await http.get(
-      Uri.parse('$baseUrl/therapist/holiday-requests'),
-      headers: getAuthHeaders(token),
-    );
+  // Get holidays for calendar view
+  static Future<Map<String, dynamic>> getCalendarHolidays() async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) {
+        return {'success': false, 'message': 'No access token found'};
+      }
 
-    final responseData = json.decode(response.body);
+      final response = await http.get(
+        Uri.parse('$baseUrl/therapist/holiday-requests/calendar'),
+        headers: getAuthHeaders(token),
+      );
 
-    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': responseData['data']};
+      } else {
+        return {
+          'success': false,
+          'message':
+              responseData['message'] ?? 'Failed to get calendar holidays',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
+  }
+
+  // Submit holiday request
+  static Future<Map<String, dynamic>> requestHoliday({
+    required String date, // Format: 'YYYY-MM-DD'
+    required String reason,
+  }) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) {
+        return {'success': false, 'message': 'No access token found'};
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/therapist/holiday-requests'),
+        headers: getAuthHeaders(token),
+        body: json.encode({'date': date, 'reason': reason}),
+      );
+
+      final responseData = json.decode(response.body);
+
       return {
-        'success': true,
+        'success': response.statusCode == 201 || response.statusCode == 200,
+        'message':
+            responseData['message'] ??
+            (response.statusCode == 201
+                ? 'Holiday request submitted successfully'
+                : 'Failed to submit holiday request'),
         'data': responseData['data'],
       };
-    } else {
-      return {
-        'success': false,
-        'message': responseData['message'] ?? 'Failed to get holiday requests',
-      };
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
-  } catch (e) {
-    return {
-      'success': false,
-      'message': 'Network error: ${e.toString()}',
-    };
   }
-}
 
-// Get holidays for calendar view
-static Future<Map<String, dynamic>> getCalendarHolidays() async {
-  try {
-    final token = await getAccessToken();
-    if (token == null) {
+  // Cancel holiday request
+  static Future<Map<String, dynamic>> cancelHolidayRequest({
+    required int requestId,
+  }) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) {
+        return {'success': false, 'message': 'No access token found'};
+      }
+
+      final response = await http.delete(
+        Uri.parse('$baseUrl/therapist/holiday-requests/$requestId'),
+        headers: getAuthHeaders(token),
+      );
+
+      final responseData = json.decode(response.body);
+
       return {
-        'success': false,
-        'message': 'No access token found',
+        'success': response.statusCode == 200,
+        'message':
+            responseData['message'] ??
+            (response.statusCode == 200
+                ? 'Holiday request cancelled successfully'
+                : 'Failed to cancel holiday request'),
       };
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
-
-    final response = await http.get(
-      Uri.parse('$baseUrl/therapist/holiday-requests/calendar'),
-      headers: getAuthHeaders(token),
-    );
-
-    final responseData = json.decode(response.body);
-
-    if (response.statusCode == 200) {
-      return {
-        'success': true,
-        'data': responseData['data'],
-      };
-    } else {
-      return {
-        'success': false,
-        'message': responseData['message'] ?? 'Failed to get calendar holidays',
-      };
-    }
-  } catch (e) {
-    return {
-      'success': false,
-      'message': 'Network error: ${e.toString()}',
-    };
   }
-}
-
-// Submit holiday request
-static Future<Map<String, dynamic>> requestHoliday({
-  required String date, // Format: 'YYYY-MM-DD'
-  required String reason,
-}) async {
-  try {
-    final token = await getAccessToken();
-    if (token == null) {
-      return {
-        'success': false,
-        'message': 'No access token found',
-      };
-    }
-
-    final response = await http.post(
-      Uri.parse('$baseUrl/therapist/holiday-requests'),
-      headers: getAuthHeaders(token),
-      body: json.encode({
-        'date': date,
-        'reason': reason,
-      }),
-    );
-
-    final responseData = json.decode(response.body);
-
-    return {
-      'success': response.statusCode == 201 || response.statusCode == 200,
-      'message': responseData['message'] ?? (response.statusCode == 201 
-          ? 'Holiday request submitted successfully' 
-          : 'Failed to submit holiday request'),
-      'data': responseData['data'],
-    };
-  } catch (e) {
-    return {
-      'success': false,
-      'message': 'Network error: ${e.toString()}',
-    };
-  }
-}
-
-// Cancel holiday request
-static Future<Map<String, dynamic>> cancelHolidayRequest({
-  required int requestId,
-}) async {
-  try {
-    final token = await getAccessToken();
-    if (token == null) {
-      return {
-        'success': false,
-        'message': 'No access token found',
-      };
-    }
-
-    final response = await http.delete(
-      Uri.parse('$baseUrl/therapist/holiday-requests/$requestId'),
-      headers: getAuthHeaders(token),
-    );
-
-    final responseData = json.decode(response.body);
-
-    return {
-      'success': response.statusCode == 200,
-      'message': responseData['message'] ?? (response.statusCode == 200 
-          ? 'Holiday request cancelled successfully' 
-          : 'Failed to cancel holiday request'),
-    };
-  } catch (e) {
-    return {
-      'success': false,
-      'message': 'Network error: ${e.toString()}',
-    };
-  }
-}
-
-
-
 
   // Verify OTP method
   static Future<Map<String, dynamic>> verifyOTP({
@@ -269,26 +224,22 @@ static Future<Map<String, dynamic>> cancelHolidayRequest({
       final response = await http.post(
         Uri.parse('$baseUrl/therapist/verify-reset-code'),
         headers: headers,
-        body: json.encode({
-          'email': email,
-          'code': otp,
-        }),
+        body: json.encode({'email': email, 'code': otp}),
       );
 
       final responseData = json.decode(response.body);
 
       return {
         'success': response.statusCode == 200,
-        'message': responseData['message'] ?? (response.statusCode == 200 
-            ? 'OTP verified successfully' 
-            : 'Invalid or expired OTP'),
+        'message':
+            responseData['message'] ??
+            (response.statusCode == 200
+                ? 'OTP verified successfully'
+                : 'Invalid or expired OTP'),
         'data': responseData['data'],
       };
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
@@ -315,15 +266,14 @@ static Future<Map<String, dynamic>> cancelHolidayRequest({
 
       return {
         'success': response.statusCode == 200,
-        'message': responseData['message'] ?? (response.statusCode == 200 
-            ? 'Password reset successfully' 
-            : 'Failed to reset password'),
+        'message':
+            responseData['message'] ??
+            (response.statusCode == 200
+                ? 'Password reset successfully'
+                : 'Failed to reset password'),
       };
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
@@ -334,12 +284,12 @@ static Future<Map<String, dynamic>> cancelHolidayRequest({
       final therapistData = loginData['data']['therapist'];
       final accessToken = loginData['data']['access_token'];
       final tokenType = loginData['data']['token_type'];
-      
+
       await prefs.setString('access_token', accessToken);
       await prefs.setString('token_type', tokenType);
       await prefs.setString('therapist_data', json.encode(therapistData));
       await prefs.setBool('is_logged_in', true);
-      
+
       print('✅ Login data saved successfully');
     } catch (e) {
       print('❌ Error saving login data: $e');
@@ -380,24 +330,24 @@ static Future<Map<String, dynamic>> cancelHolidayRequest({
     try {
       final token = await getAccessToken();
       if (token == null) {
-        return {
-          'success': false,
-          'message': 'No access token found',
-        };
+        return {'success': false, 'message': 'No access token found'};
       }
+
+      print('🔄 Making get profile request to: $baseUrl/therapist/profile');
+      print('🔑 Token: ${token.substring(0, 20)}...');
 
       final response = await http.get(
         Uri.parse('$baseUrl/therapist/profile'),
         headers: getAuthHeaders(token),
       );
 
+      print('📱 Get profile response status: ${response.statusCode}');
+      print('📄 Get profile response body: ${response.body}');
+
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        return {
-          'success': true,
-          'data': responseData,
-        };
+        return {'success': true, 'data': responseData['data']};
       } else {
         return {
           'success': false,
@@ -405,49 +355,41 @@ static Future<Map<String, dynamic>> cancelHolidayRequest({
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
+      print('❌ Get profile error: $e');
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
-  // Update therapist profile
+  // Update therapist profile - FIXED: Removed email parameter
   static Future<Map<String, dynamic>> updateProfile({
     required String name,
-    required String email,
     required String phone,
     String? bio,
   }) async {
     try {
       final token = await getAccessToken();
       if (token == null) {
-        return {
-          'success': false,
-          'message': 'No access token found',
-        };
+        return {'success': false, 'message': 'No access token found'};
       }
 
-      final response = await http.put(
+      print('🔄 Making update profile request to: $baseUrl/therapist/profile');
+      print('📄 Update data: name=$name, phone=$phone, bio=$bio');
+
+      final response = await http.post(
         Uri.parse('$baseUrl/therapist/profile'),
         headers: getAuthHeaders(token),
-        body: json.encode({
-          'name': name,
-          'email': email,
-          'phone': phone,
-          'bio': bio,
-        }),
+        body: json.encode({'name': name, 'phone': phone, 'bio': bio}),
       );
+
+      print('📱 Update profile response status: ${response.statusCode}');
+      print('📄 Update profile response body: ${response.body}');
 
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
         // Update stored therapist data
         await saveTherapistData(responseData['data']['therapist']);
-        return {
-          'success': true,
-          'data': responseData,
-        };
+        return {'success': true, 'data': responseData};
       } else {
         return {
           'success': false,
@@ -455,15 +397,15 @@ static Future<Map<String, dynamic>> cancelHolidayRequest({
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
+      print('❌ Update profile error: $e');
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
   // Save updated therapist data
-  static Future<void> saveTherapistData(Map<String, dynamic> therapistData) async {
+  static Future<void> saveTherapistData(
+    Map<String, dynamic> therapistData,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('therapist_data', json.encode(therapistData));
   }
@@ -477,13 +419,10 @@ static Future<Map<String, dynamic>> cancelHolidayRequest({
     try {
       final token = await getAccessToken();
       if (token == null) {
-        return {
-          'success': false,
-          'message': 'No access token found',
-        };
+        return {'success': false, 'message': 'No access token found'};
       }
 
-      final response = await http.put(
+      final response = await http.post(
         Uri.parse('$baseUrl/therapist/change-password'),
         headers: getAuthHeaders(token),
         body: json.encode({
@@ -497,15 +436,14 @@ static Future<Map<String, dynamic>> cancelHolidayRequest({
 
       return {
         'success': response.statusCode == 200,
-        'message': responseData['message'] ?? (response.statusCode == 200 
-            ? 'Password changed successfully' 
-            : 'Failed to change password'),
+        'message':
+            responseData['message'] ??
+            (response.statusCode == 200
+                ? 'Password changed successfully'
+                : 'Failed to change password'),
       };
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
@@ -514,10 +452,7 @@ static Future<Map<String, dynamic>> cancelHolidayRequest({
     try {
       final token = await getAccessToken();
       if (token == null) {
-        return {
-          'success': false,
-          'message': 'No access token found',
-        };
+        return {'success': false, 'message': 'No access token found'};
       }
 
       final response = await http.get(
@@ -528,10 +463,7 @@ static Future<Map<String, dynamic>> cancelHolidayRequest({
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        return {
-          'success': true,
-          'data': responseData,
-        };
+        return {'success': true, 'data': responseData};
       } else {
         return {
           'success': false,
@@ -539,10 +471,7 @@ static Future<Map<String, dynamic>> cancelHolidayRequest({
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
@@ -551,10 +480,7 @@ static Future<Map<String, dynamic>> cancelHolidayRequest({
     try {
       final token = await getAccessToken();
       if (token == null) {
-        return {
-          'success': false,
-          'message': 'No access token found',
-        };
+        return {'success': false, 'message': 'No access token found'};
       }
 
       final response = await http.get(
@@ -566,10 +492,7 @@ static Future<Map<String, dynamic>> cancelHolidayRequest({
       print('📅 Availability response: $responseData');
 
       if (response.statusCode == 200) {
-        return {
-          'success': true,
-          'data': responseData,
-        };
+        return {'success': true, 'data': responseData};
       } else {
         return {
           'success': false,
@@ -577,10 +500,7 @@ static Future<Map<String, dynamic>> cancelHolidayRequest({
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
@@ -593,10 +513,7 @@ static Future<Map<String, dynamic>> cancelHolidayRequest({
     try {
       final token = await getAccessToken();
       if (token == null) {
-        return {
-          'success': false,
-          'message': 'No access token found',
-        };
+        return {'success': false, 'message': 'No access token found'};
       }
 
       final response = await http.post(
@@ -612,16 +529,15 @@ static Future<Map<String, dynamic>> cancelHolidayRequest({
 
       return {
         'success': response.statusCode == 200,
-        'message': responseData['message'] ?? (response.statusCode == 200 
-            ? 'Booking status updated successfully' 
-            : 'Failed to update booking status'),
+        'message':
+            responseData['message'] ??
+            (response.statusCode == 200
+                ? 'Booking status updated successfully'
+                : 'Failed to update booking status'),
         'data': responseData['data'],
       };
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
@@ -629,24 +545,25 @@ static Future<Map<String, dynamic>> cancelHolidayRequest({
   static Future<Map<String, dynamic>> testConnection() async {
     try {
       print('🧪 Testing connection to: $baseUrl');
-      
-      final response = await http.get(
-        Uri.parse('$baseUrl/test'), // Add a test endpoint if available
-        headers: headers,
-      ).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          throw Exception('Connection timeout');
-        },
-      );
 
-    
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/test'), // Add a test endpoint if available
+            headers: headers,
+          )
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              throw Exception('Connection timeout');
+            },
+          );
+
       return {
         'success': response.statusCode == 200,
-        'message': 'Connection ${response.statusCode == 200 ? 'successful' : 'failed'}',
+        'message':
+            'Connection ${response.statusCode == 200 ? 'successful' : 'failed'}',
       };
     } catch (e) {
-
       return {
         'success': false,
         'message': 'Connection failed: ${e.toString()}',
