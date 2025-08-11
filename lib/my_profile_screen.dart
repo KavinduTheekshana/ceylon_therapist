@@ -67,6 +67,9 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     _emailController.text = _profileData['email'] ?? '';
     _phoneController.text = _profileData['phone'] ?? '';
     _bioController.text = _profileData['bio'] ?? '';
+    
+    // **NEW: Debug logging**
+    print('🔄 Profile initialized with: Name=${_profileData['name']}, Phone=${_profileData['phone']}, Bio=${_profileData['bio']}');
   }
 
   Future<void> _refreshProfile() async {
@@ -119,34 +122,37 @@ class _MyProfileScreenState extends State<MyProfileScreen>
         bio: _bioController.text.trim(),
       );
 
-      // ADD DEBUG LOGGING
-      print('Update result: $result');
-      print('Success: ${result['success']}');
       if (result['success']) {
-        print('Data structure: ${result['data']}');
-      }
+        // Get the updated data from the API response
+        Map<String, dynamic> updatedProfileData;
+        if (result['data'] != null && result['data']['therapist'] != null) {
+          updatedProfileData = result['data']['therapist'];
+        } else {
+          updatedProfileData = result['data'];
+        }
 
-      if (result['success']) {
+        // Update local storage with new data
+        await ApiService.saveTherapistData(updatedProfileData);
+
         setState(() {
-          if (result['data'] != null && result['data']['therapist'] != null) {
-            _profileData = result['data']['therapist'];
-          } else {
-            _profileData = result['data'];
-          }
-          _initializeProfile();
-          _isEditing = false;
           _isLoading = false;
         });
 
-        // ADD THIS LINE - Update local storage with new data
-        await ApiService.saveTherapistData(_profileData);
-
+        // Show success message and logout
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Profile updated successfully'),
+            content: Text('Profile updated successfully! Logging out to refresh data...'),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
           ),
         );
+
+        // Wait a moment for user to see the message, then logout
+        await Future.delayed(const Duration(seconds: 2));
+        
+        // **NEW: Logout after successful profile update**
+        await _logoutAndRedirect();
+        
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -172,6 +178,92 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     }
   }
 
+  // **NEW: Show confirmation dialog before update**
+  void _showUpdateConfirmation() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF9A563A).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.info_outline,
+                  color: Color(0xFF9A563A),
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Update Profile',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1F2937),
+                ),
+              ),
+            ],
+          ),
+          content: const Text(
+            'Your profile will be updated and you will be logged out to refresh the app data. You\'ll need to log back in.',
+            style: TextStyle(color: Color(0xFF6B7280)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(foregroundColor: const Color(0xFF6B7280)),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _updateProfile();
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF9A563A),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Update & Logout'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // **NEW: Logout method for profile update**
+  Future<void> _logoutAndRedirect() async {
+    try {
+      // Clear all stored data
+      await ApiService.logout();
+      
+      if (mounted) {
+        // Navigate to login screen and clear all routes
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/login',
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      print('Error during logout: $e');
+      // If logout fails, still try to redirect
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/login',
+          (route) => false,
+        );
+      }
+    }
+  }
+
   void _cancelEditing() {
     setState(() {
       _isEditing = false;
@@ -191,6 +283,9 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
   @override
   Widget build(BuildContext context) {
+    // **NEW: Debug logging to track current data**
+    print('🎨 Profile screen building with: Name=${_profileData['name']}, Phone=${_profileData['phone']}, Bio=${_profileData['bio']}');
+    
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
