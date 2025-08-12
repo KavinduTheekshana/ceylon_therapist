@@ -500,20 +500,20 @@ class _MyServicesScreenState extends State<MyServicesScreen>
               const SizedBox(height: 8),
 
               // Description
-              if (service['description'] != null &&
-                  service['description'].toString().isNotEmpty) ...[
-                Text(
-                  service['description'].toString(),
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: _textSecondary,
-                    height: 1.4,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 12),
-              ],
+              // if (service['description'] != null &&
+              //     service['description'].toString().isNotEmpty) ...[
+              //   Text(
+              //     service['description'].toString(),
+              //     style: const TextStyle(
+              //       fontSize: 13,
+              //       color: _textSecondary,
+              //       height: 1.4,
+              //     ),
+              //     maxLines: 2,
+              //     overflow: TextOverflow.ellipsis,
+              //   ),
+              //   const SizedBox(height: 12),
+              // ],
 
               const Spacer(),
 

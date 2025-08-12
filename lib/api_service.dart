@@ -3,7 +3,9 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://127.0.0.1:8000/api';
+  // static const String baseUrl = 'http://127.0.0.1:8000/api';
+  static const String baseUrl = 'https://app.ceylonayurvedahealth.co.uk/api';
+
 
   static Map<String, String> get headers => {
     'Content-Type': 'application/json',
@@ -21,17 +23,11 @@ class ApiService {
     required String password,
   }) async {
     try {
-      print('🔄 Making login request to: $baseUrl/therapist/login');
-      print('📧 Email: $email');
-
       final response = await http.post(
         Uri.parse('$baseUrl/therapist/login'),
         headers: headers,
         body: json.encode({'email': email, 'password': password}),
       );
-
-      print('📱 Response status code: ${response.statusCode}');
-      print('📄 Response body: ${response.body}');
 
       final responseData = json.decode(response.body);
 
@@ -54,16 +50,13 @@ class ApiService {
         };
       }
     } on http.ClientException catch (e) {
-      print('❌ HTTP Client Error: $e');
       return {
         'success': false,
         'message': 'Connection failed. Please check your internet connection.',
       };
     } on FormatException catch (e) {
-      print('❌ JSON Format Error: $e');
       return {'success': false, 'message': 'Invalid server response format.'};
     } catch (e) {
-      print('❌ Unexpected Error: $e');
       return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
@@ -290,9 +283,7 @@ class ApiService {
       await prefs.setString('therapist_data', json.encode(therapistData));
       await prefs.setBool('is_logged_in', true);
 
-      print('✅ Login data saved successfully');
     } catch (e) {
-      print('❌ Error saving login data: $e');
       throw Exception('Failed to save login data');
     }
   }
@@ -333,16 +324,16 @@ class ApiService {
         return {'success': false, 'message': 'No access token found'};
       }
 
-      print('🔄 Making get profile request to: $baseUrl/therapist/profile');
-      print('🔑 Token: ${token.substring(0, 20)}...');
+      // print('🔄 Making get profile request to: $baseUrl/therapist/profile');
+      // print('🔑 Token: ${token.substring(0, 20)}...');
 
       final response = await http.get(
         Uri.parse('$baseUrl/therapist/profile'),
         headers: getAuthHeaders(token),
       );
 
-      print('📱 Get profile response status: ${response.statusCode}');
-      print('📄 Get profile response body: ${response.body}');
+      // print('📱 Get profile response status: ${response.statusCode}');
+      // print('📄 Get profile response body: ${response.body}');
 
       final responseData = json.decode(response.body);
 
@@ -355,7 +346,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      print('❌ Get profile error: $e');
+      // print('❌ Get profile error: $e');
       return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
@@ -372,8 +363,8 @@ class ApiService {
         return {'success': false, 'message': 'No access token found'};
       }
 
-      print('🔄 Making update profile request to: $baseUrl/therapist/profile');
-      print('📄 Update data: name=$name, phone=$phone, bio=$bio');
+      // print('🔄 Making update profile request to: $baseUrl/therapist/profile');
+      // print('📄 Update data: name=$name, phone=$phone, bio=$bio');
 
       final response = await http.post(
         Uri.parse('$baseUrl/therapist/profile'),
@@ -381,8 +372,8 @@ class ApiService {
         body: json.encode({'name': name, 'phone': phone, 'bio': bio}),
       );
 
-      print('📱 Update profile response status: ${response.statusCode}');
-      print('📄 Update profile response body: ${response.body}');
+      // print('📱 Update profile response status: ${response.statusCode}');
+      // print('📄 Update profile response body: ${response.body}');
 
       final responseData = json.decode(response.body);
 
@@ -397,7 +388,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      print('❌ Update profile error: $e');
+      // print('❌ Update profile error: $e');
       return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
@@ -489,7 +480,7 @@ class ApiService {
       );
 
       final responseData = json.decode(response.body);
-      print('📅 Availability response: $responseData');
+      // print('📅 Availability response: $responseData');
 
       if (response.statusCode == 200) {
         return {'success': true, 'data': responseData};
@@ -544,7 +535,7 @@ class ApiService {
   // Test connection method
   static Future<Map<String, dynamic>> testConnection() async {
     try {
-      print('🧪 Testing connection to: $baseUrl');
+      // print('🧪 Testing connection to: $baseUrl');
 
       final response = await http
           .get(
