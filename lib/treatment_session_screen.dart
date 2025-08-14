@@ -550,14 +550,30 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final screenHeight = screenSize.height;
+    final screenWidth = screenSize.width;
+    final safeAreaHeight = screenHeight - MediaQuery.of(context).padding.top - MediaQuery.of(context).padding.bottom;
+    
+    // Responsive padding and sizing
+    final isSmallScreen = screenHeight < 700;
+    final isVerySmallScreen = screenHeight < 600;
+    final isLargeScreen = screenHeight > 800;
+    
+    final horizontalPadding = screenWidth < 360 ? 16.0 : 20.0;
+    final verticalSpacing = isVerySmallScreen ? 12.0 : isSmallScreen ? 16.0 : 24.0;
+    
     return Scaffold(
       backgroundColor: _surfaceColor,
       appBar: AppBar(
         backgroundColor: _cardColor,
         foregroundColor: _textPrimary,
-        title: const Text(
+        title: Text(
           'Treatment Session',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+          style: TextStyle(
+            fontWeight: FontWeight.w600, 
+            fontSize: isSmallScreen ? 16 : 18,
+          ),
         ),
         elevation: 0,
         surfaceTintColor: _cardColor,
@@ -573,26 +589,38 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
           icon: const Icon(Icons.arrow_back_rounded, size: 22),
         ),
       ),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SlideTransition(
-          position: _slideAnimation,
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              children: [
-                // Patient Information Card
-                _buildPatientCard(),
-                const SizedBox(height: 24),
+      body: SafeArea(
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: SlideTransition(
+            position: _slideAnimation,
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: horizontalPadding,
+                vertical: isSmallScreen ? 12.0 : 16.0,
+              ),
+              child: Column(
+                children: [
+                  // Patient Information Card
+                  _buildPatientCard(isSmallScreen),
+                  SizedBox(height: verticalSpacing),
 
-                // Timer Display
-                Expanded(
-                  child: _buildTimerDisplay(),
-                ),
+                  // Timer Display - Make it flexible
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return _buildTimerDisplay(constraints.maxHeight, isSmallScreen, isVerySmallScreen);
+                      },
+                    ),
+                  ),
 
-                // Control Buttons
-                _buildControlButtons(),
-              ],
+                  // Control Buttons - Always visible at bottom
+                  SafeArea(
+                    top: false,
+                    child: _buildControlButtons(isSmallScreen),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -600,10 +628,10 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
     );
   }
 
-  Widget _buildPatientCard() {
+  Widget _buildPatientCard(bool isSmallScreen) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isSmallScreen ? 16.0 : 20.0),
       decoration: BoxDecoration(
         color: _cardColor,
         borderRadius: BorderRadius.circular(16),
@@ -622,7 +650,7 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(isSmallScreen ? 10.0 : 12.0),
                 decoration: BoxDecoration(
                   color: _primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -630,7 +658,7 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
                 child: Icon(
                   Icons.person_rounded,
                   color: _primaryColor,
-                  size: 24,
+                  size: isSmallScreen ? 20 : 24,
                 ),
               ),
               const SizedBox(width: 16),
@@ -640,17 +668,19 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
                   children: [
                     Text(
                       widget.appointment['customer_name'] ?? 'Unknown Patient',
-                      style: const TextStyle(
-                        fontSize: 18,
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 16 : 18,
                         fontWeight: FontWeight.w600,
                         color: _textPrimary,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Ref: ${widget.appointment['reference'] ?? 'N/A'}',
-                      style: const TextStyle(
-                        fontSize: 13,
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 12 : 13,
                         color: _textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
@@ -660,10 +690,10 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: isSmallScreen ? 12.0 : 16.0),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(isSmallScreen ? 12.0 : 16.0),
             decoration: BoxDecoration(
               color: _surfaceColor,
               borderRadius: BorderRadius.circular(12),
@@ -674,43 +704,45 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
                   children: [
                     Icon(
                       Icons.medical_services_rounded,
-                      size: 18,
+                      size: isSmallScreen ? 16 : 18,
                       color: _textSecondary,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         widget.appointment['service']['title'] ?? 'Treatment',
-                        style: const TextStyle(
-                          fontSize: 15,
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 14 : 15,
                           fontWeight: FontWeight.w500,
                           color: _textPrimary,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     Text(
                       '£${widget.appointment['price'] ?? '0'}',
-                      style: const TextStyle(
-                        fontSize: 16,
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 15 : 16,
                         fontWeight: FontWeight.w700,
                         color: _primaryColor,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: isSmallScreen ? 8.0 : 12.0),
                 Row(
                   children: [
                     Icon(
                       Icons.schedule_rounded,
-                      size: 18,
+                      size: isSmallScreen ? 16 : 18,
                       color: _textSecondary,
                     ),
                     const SizedBox(width: 12),
                     Text(
                       'Duration: ${widget.appointment['service']['duration'] ?? 30} minutes',
-                      style: const TextStyle(
-                        fontSize: 14,
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 13 : 14,
                         color: _textSecondary,
                       ),
                     ),
@@ -724,22 +756,47 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
     );
   }
 
-  Widget _buildTimerDisplay() {
-    return Center(
+  Widget _buildTimerDisplay(double availableHeight, bool isSmallScreen, bool isVerySmallScreen) {
+    // Calculate responsive timer size based on available space
+    double timerSize;
+    double fontSize;
+    double statusFontSize;
+    
+    if (isVerySmallScreen) {
+      timerSize = availableHeight * 0.6;
+      timerSize = timerSize.clamp(180.0, 220.0);
+      fontSize = 32;
+      statusFontSize = 14;
+    } else if (isSmallScreen) {
+      timerSize = availableHeight * 0.65;
+      timerSize = timerSize.clamp(200.0, 240.0);
+      fontSize = 38;
+      statusFontSize = 15;
+    } else {
+      timerSize = availableHeight * 0.7;
+      timerSize = timerSize.clamp(240.0, 300.0);
+      fontSize = 48;
+      statusFontSize = 16;
+    }
+
+    return SingleChildScrollView(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          // Add some top padding to center better
+          SizedBox(height: availableHeight * 0.05),
+          
           // Circular Progress Indicator
           SizedBox(
-            width: 280,
-            height: 280,
+            width: timerSize,
+            height: timerSize,
             child: Stack(
               alignment: Alignment.center,
               children: [
                 // Background circle
                 Container(
-                  width: 280,
-                  height: 280,
+                  width: timerSize,
+                  height: timerSize,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: _surfaceColor,
@@ -751,53 +808,64 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
                 ),
                 // Progress circle
                 SizedBox(
-                  width: 260,
-                  height: 260,
+                  width: timerSize - 20,
+                  height: timerSize - 20,
                   child: CircularProgressIndicator(
                     value: _getProgress(),
-                    strokeWidth: 12,
+                    strokeWidth: isVerySmallScreen ? 8 : isSmallScreen ? 10 : 12,
                     backgroundColor: _borderColor.withOpacity(0.3),
                     valueColor: AlwaysStoppedAnimation<Color>(_getTimerColor()),
                   ),
                 ),
                 // Timer text
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      _formatTime(_remainingSeconds),
-                      style: TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.w700,
-                        color: _getTimerColor(),
-                        fontFeatures: const [FontFeature.tabularFigures()],
+                Padding(
+                  padding: EdgeInsets.all(timerSize * 0.1),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          _formatTime(_remainingSeconds),
+                          style: TextStyle(
+                            fontSize: fontSize,
+                            fontWeight: FontWeight.w700,
+                            color: _getTimerColor(),
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _isCompleted
-                          ? 'Completed!'
-                          : _isTimerRunning
-                              ? 'In Progress'
-                              : _isTimerStarted
-                                  ? 'Paused'
-                                  : 'Ready to Start',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: _textSecondary,
+                      SizedBox(height: isVerySmallScreen ? 4 : 8),
+                      Text(
+                        _isCompleted
+                            ? 'Completed!'
+                            : _isTimerRunning
+                                ? 'In Progress'
+                                : _isTimerStarted
+                                    ? 'Paused'
+                                    : 'Ready to Start',
+                        style: TextStyle(
+                          fontSize: statusFontSize,
+                          fontWeight: FontWeight.w500,
+                          color: _textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 32),
+          
+          SizedBox(height: isVerySmallScreen ? 16 : isSmallScreen ? 20 : 32),
           
           // Progress info
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            padding: EdgeInsets.symmetric(
+              horizontal: isSmallScreen ? 16 : 20, 
+              vertical: isSmallScreen ? 10 : 12,
+            ),
             decoration: BoxDecoration(
               color: _getTimerColor().withOpacity(0.1),
               borderRadius: BorderRadius.circular(20),
@@ -805,7 +873,7 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
             child: Text(
               'Elapsed: ${_formatTime(_totalSeconds - _remainingSeconds)} / ${_formatTime(_totalSeconds)}',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: isSmallScreen ? 13 : 14,
                 fontWeight: FontWeight.w600,
                 color: _getTimerColor(),
               ),
@@ -816,21 +884,25 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
     );
   }
 
-  Widget _buildControlButtons() {
+  Widget _buildControlButtons(bool isSmallScreen) {
+    final buttonHeight = isSmallScreen ? 48.0 : 56.0;
+    final buttonFontSize = isSmallScreen ? 16.0 : 18.0;
+    final iconSize = isSmallScreen ? 20.0 : 24.0;
+    
     return Column(
       children: [
         if (!_isCompleted) ...[
           // Primary action button
           SizedBox(
             width: double.infinity,
-            height: 56,
+            height: buttonHeight,
             child: FilledButton(
               onPressed: _isTimerRunning ? _pauseTimer : _resumeTimer,
               style: FilledButton.styleFrom(
                 backgroundColor: _isTimerRunning ? _warningColor : _successColor,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 16),
                 ),
               ),
               child: Row(
@@ -838,89 +910,158 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
                 children: [
                   Icon(
                     _isTimerRunning ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                    size: 24,
+                    size: iconSize,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    _isTimerRunning
-                        ? 'Pause Timer'
-                        : _isTimerStarted
-                            ? 'Resume Timer'
-                            : 'Start Timer Now',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
+                  Flexible(
+                    child: Text(
+                      _isTimerRunning
+                          ? 'Pause Timer'
+                          : _isTimerStarted
+                              ? 'Resume Timer'
+                              : 'Start Timer Now',
+                      style: TextStyle(
+                        fontSize: buttonFontSize,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: isSmallScreen ? 12 : 16),
           
-          // Secondary buttons
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: _manualCompleteSession, // Changed to use manual completion
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: _successColor,
-                    side: const BorderSide(color: _successColor),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+          // Secondary buttons - Stack vertically on very small screens
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final shouldStack = constraints.maxWidth < 300;
+              
+              if (shouldStack) {
+                return Column(
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      height: buttonHeight,
+                      child: OutlinedButton(
+                        onPressed: _manualCompleteSession,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: _successColor,
+                          side: const BorderSide(color: _successColor),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Complete Now',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: buttonFontSize,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                  child: const Text(
-                    'Complete Now',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: _cancelSession,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: _errorColor,
-                    side: const BorderSide(color: _errorColor),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: buttonHeight,
+                      child: OutlinedButton(
+                        onPressed: _cancelSession,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: _errorColor,
+                          side: const BorderSide(color: _errorColor),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: buttonFontSize,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                  child: const Text(
-                    'Cancel',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-            ],
+                  ],
+                );
+              } else {
+                return Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: buttonHeight,
+                        child: OutlinedButton(
+                          onPressed: _manualCompleteSession,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: _successColor,
+                            side: const BorderSide(color: _successColor),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            'Complete Now',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: buttonFontSize,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: SizedBox(
+                        height: buttonHeight,
+                        child: OutlinedButton(
+                          onPressed: _cancelSession,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: _errorColor,
+                            side: const BorderSide(color: _errorColor),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: buttonFontSize,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
+            },
           ),
         ] else ...[
           // Session completed - only show done button
           SizedBox(
             width: double.infinity,
-            height: 56,
+            height: buttonHeight,
             child: FilledButton(
               onPressed: () => Navigator.of(context).pop(),
               style: FilledButton.styleFrom(
                 backgroundColor: _successColor,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 16),
                 ),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.check_rounded, size: 24),
-                  SizedBox(width: 8),
+                  Icon(Icons.check_rounded, size: iconSize),
+                  const SizedBox(width: 8),
                   Text(
                     'Session Complete',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: buttonFontSize,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
