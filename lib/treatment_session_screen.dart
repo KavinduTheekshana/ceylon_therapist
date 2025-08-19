@@ -17,7 +17,7 @@ class TreatmentSessionScreen extends StatefulWidget {
 }
 
 class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -28,6 +28,10 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
   bool _isTimerRunning = false;
   bool _isTimerStarted = false;
   bool _isCompleted = false;
+  
+  // Add these for background timer tracking
+  DateTime? _timerStartTime;
+  DateTime? _pauseTime;
   
   // Audio player for completion sound
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -46,6 +50,9 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
   @override
   void initState() {
     super.initState();
+    
+    // Add observer for app lifecycle changes
+    WidgetsBinding.instance.addObserver(this);
 
     // Initialize timer with service duration
     final duration = widget.appointment['service']['duration'] ?? 30;
@@ -74,10 +81,67 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
 
   @override
   void dispose() {
+    // Remove observer
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _audioPlayer.dispose();
     _animationController.dispose();
     super.dispose();
+  }
+
+  // Handle app lifecycle changes
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+      case AppLifecycleState.hidden:
+        // App is going to background or screen is turning off
+        if (_isTimerRunning) {
+          _pauseTime = DateTime.now();
+          print('App paused at: $_pauseTime');
+        }
+        break;
+        
+      case AppLifecycleState.resumed:
+        // App is coming back to foreground
+        if (_isTimerRunning && _pauseTime != null && _timerStartTime != null) {
+          _resumeFromBackground();
+        }
+        break;
+        
+      case AppLifecycleState.inactive:
+        // Handle inactive state (like during phone calls)
+        break;
+    }
+  }
+
+  void _resumeFromBackground() {
+    if (_pauseTime == null || _timerStartTime == null) return;
+    
+    final now = DateTime.now();
+    final backgroundDuration = now.difference(_pauseTime!);
+    final totalElapsed = now.difference(_timerStartTime!);
+    
+    print('Resumed from background. Background duration: ${backgroundDuration.inSeconds}s');
+    print('Total elapsed since start: ${totalElapsed.inSeconds}s');
+    
+    // Calculate new remaining time based on actual elapsed time
+    final newRemainingSeconds = _totalSeconds - totalElapsed.inSeconds;
+    
+    setState(() {
+      if (newRemainingSeconds <= 0) {
+        // Timer should have completed while in background
+        _remainingSeconds = 0;
+        _completeSession();
+      } else {
+        _remainingSeconds = newRemainingSeconds;
+      }
+    });
+    
+    _pauseTime = null;
   }
 
   void _startTimer() {
@@ -88,7 +152,18 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
       _isTimerStarted = true;
     });
 
+    // Record the start time for background tracking
+    if (_timerStartTime == null) {
+      _timerStartTime = DateTime.now();
+    } else {
+      // If resuming, adjust start time based on elapsed time
+      final elapsed = _totalSeconds - _remainingSeconds;
+      _timerStartTime = DateTime.now().subtract(Duration(seconds: elapsed));
+    }
+
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+      
       setState(() {
         if (_remainingSeconds > 0) {
           _remainingSeconds--;
@@ -116,6 +191,7 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
 
   void _pauseTimer() {
     _timer?.cancel();
+    _pauseTime = DateTime.now();
     setState(() {
       _isTimerRunning = false;
     });
@@ -123,6 +199,7 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
 
   void _resumeTimer() {
     if (_remainingSeconds > 0) {
+      _pauseTime = null;
       _startTimer();
     }
   }
@@ -338,6 +415,9 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
         return StatefulBuilder(
           builder: (context, setState) {
             bool isConfirming = false;
+            final TextEditingController notesController = TextEditingController(
+              text: 'Session completed and confirmed by therapist',
+            );
             
             return AlertDialog(
               backgroundColor: Colors.white,
@@ -384,53 +464,95 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
                   ),
                 ],
               ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Treatment session for ${widget.appointment['customer_name']} has been completed successfully.',
-                    style: const TextStyle(color: _textSecondary),
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: _successColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Treatment session for ${widget.appointment['customer_name']} has been completed successfully.',
+                      style: const TextStyle(color: _textSecondary),
                     ),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Service: ${widget.appointment['service']['title']}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: _textPrimary,
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: _successColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            'Service: ${widget.appointment['service']['title']}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: _textPrimary,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Duration: ${widget.appointment['service']['duration']} minutes',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: _textSecondary,
+                          const SizedBox(height: 4),
+                          Text(
+                            'Duration: ${widget.appointment['service']['duration']} minutes',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: _textSecondary,
+                            ),
                           ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Session Notes section (always visible)
+                    const Text(
+                      'Session Notes',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: _textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: _borderColor),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: TextField(
+                        controller: notesController,
+                        enabled: !isConfirming,
+                        maxLines: 3,
+                        maxLength: 250,
+                        decoration: InputDecoration(
+                          hintText: 'Edit the session notes if needed...',
+                          hintStyle: TextStyle(
+                            color: _textSecondary.withOpacity(0.7),
+                            fontSize: 13,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.all(12),
+                          counterStyle: const TextStyle(fontSize: 11),
                         ),
-                      ],
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: _textPrimary,
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Press "Confirm" to update the booking status in the system.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: _textSecondary,
-                      fontStyle: FontStyle.italic,
+                    
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Press "Confirm" to update the booking status in the system.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: _textSecondary,
+                        fontStyle: FontStyle.italic,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                  ],
+                ),
               ),
               actions: [
                 FilledButton(
@@ -446,10 +568,15 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
                         throw Exception('Invalid booking ID');
                       }
 
+                      // Use the notes from the text field (will have default text or user's edits)
+                      final finalNotes = notesController.text.trim().isNotEmpty 
+                          ? notesController.text.trim() 
+                          : null;
+
                       final result = await ApiService.updateBookingStatus(
                         bookingId: bookingId,
                         status: 'completed',
-                        notes: 'Session completed and confirmed by therapist',
+                        notes: finalNotes,
                       );
 
                       if (result['success']) {
