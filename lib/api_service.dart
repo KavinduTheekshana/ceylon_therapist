@@ -6,7 +6,6 @@ class ApiService {
   static const String baseUrl = 'http://127.0.0.1:8000/api';
   // static const String baseUrl = 'https://app.ceylonayurvedahealth.co.uk/api';
 
-
   static Map<String, String> get headers => {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -282,7 +281,6 @@ class ApiService {
       await prefs.setString('token_type', tokenType);
       await prefs.setString('therapist_data', json.encode(therapistData));
       await prefs.setBool('is_logged_in', true);
-
     } catch (e) {
       throw Exception('Failed to save login data');
     }
@@ -559,6 +557,50 @@ class ApiService {
         'success': false,
         'message': 'Connection failed: ${e.toString()}',
       };
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateOnlineStatus({
+    required bool isOnline,
+  }) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) {
+        return {'success': false, 'message': 'No access token found'};
+      }
+
+      print('🔄 Updating online status to: $isOnline');
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/therapist/online-status'),
+        headers: getAuthHeaders(token),
+        body: json.encode({'online_status': isOnline}),
+      );
+
+      print('📱 Online status response: ${response.statusCode}');
+      print('📄 Response body: ${response.body}');
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        // Update stored therapist data with new online status
+        final therapistData = await getTherapistData();
+        if (therapistData != null) {
+          therapistData['online_status'] = isOnline;
+          await saveTherapistData(therapistData);
+        }
+
+        return {'success': true, 'data': responseData};
+      } else {
+        return {
+          'success': false,
+          'message':
+              responseData['message'] ?? 'Failed to update online status',
+        };
+      }
+    } catch (e) {
+      print('❌ Online status update error: $e');
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 }

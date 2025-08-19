@@ -4,7 +4,8 @@ import 'my_appointments_screen.dart';
 import 'my_services_screen.dart';
 import 'my_availability_screen.dart';
 import 'my_profile_screen.dart';
-import 'today_appointments_screen.dart'; // Add this import
+import 'today_appointments_screen.dart';
+import 'api_service.dart';
 
 class TherapistDashboard extends StatefulWidget {
   final Map<String, dynamic> therapistData;
@@ -24,6 +25,10 @@ class _TherapistDashboardState extends State<TherapistDashboard>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
+  // Online status state variables
+  bool _isOnline = false;
+  bool _isUpdatingStatus = false;
+
   // Modern color scheme
   static const Color _primaryColor = Color(0xFF2563EB);
   static const Color _surfaceColor = Color(0xFFFAFBFF);
@@ -38,6 +43,10 @@ class _TherapistDashboardState extends State<TherapistDashboard>
   @override
   void initState() {
     super.initState();
+    
+    // Initialize online status from therapist data
+    _isOnline = widget.therapistData['online_status'] ?? false;
+    
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
@@ -62,6 +71,78 @@ class _TherapistDashboardState extends State<TherapistDashboard>
   void dispose() {
     _animationController.dispose();
     super.dispose();
+  }
+
+  // Method to handle online status changes
+  Future<void> _updateOnlineStatus(bool newStatus) async {
+    if (_isUpdatingStatus) return;
+
+    setState(() {
+      _isUpdatingStatus = true;
+    });
+
+    try {
+      final result = await ApiService.updateOnlineStatus(isOnline: newStatus);
+
+      if (result['success']) {
+        setState(() {
+          _isOnline = newStatus;
+        });
+        
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              newStatus ? 'You are now online' : 'You are now offline',
+            ),
+            backgroundColor: newStatus ? _successColor : _warningColor,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      } else {
+        // Revert the switch if API call failed
+        setState(() {
+          _isOnline = !newStatus;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result['message'] ?? 'Failed to update online status',
+            ),
+            backgroundColor: _errorColor,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Revert the switch if there was an error
+      setState(() {
+        _isOnline = !newStatus;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: _errorColor,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    } finally {
+      setState(() {
+        _isUpdatingStatus = false;
+      });
+    }
   }
 
   Future<void> _logout() async {
@@ -225,7 +306,7 @@ class _TherapistDashboardState extends State<TherapistDashboard>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Welcome Header
+                // Welcome Header with Online Status
                 _buildWelcomeHeader(therapist),
                 const SizedBox(height: 24),
 
@@ -418,20 +499,56 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                   ),
                 ),
                 const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    therapist['status'] == true ? 'Active' : 'Inactive',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        therapist['status'] == true ? 'Active' : 'Inactive',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: _isOnline 
+                            ? const Color.fromARGB(255, 255, 255, 255).withOpacity(0.2)
+                            : Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: _isOnline ? const Color.fromARGB(255, 255, 255, 255) : const Color.fromARGB(255, 255, 255, 255),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            _isOnline ? 'Online' : 'Offline',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -442,6 +559,60 @@ class _TherapistDashboardState extends State<TherapistDashboard>
             child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 8),
               children: [
+                // Online status switch as first item
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                  child: ListTile(
+                    leading: Icon(
+                      _isOnline ? Icons.wifi_rounded : Icons.wifi_off_rounded,
+                      color: _isOnline ? _successColor : _textSecondary,
+                      size: 22,
+                    ),
+                    title: Text(
+                      'Online Status',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: _textPrimary,
+                        fontSize: 15,
+                      ),
+                    ),
+                    subtitle: Text(
+                      _isOnline ? 'Available for Today New bookings' : 'Not accepting bookings for today',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: const Color.fromARGB(255, 65, 65, 65),
+                      ),
+                    ),
+                    trailing: _isUpdatingStatus
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(_primaryColor),
+                            ),
+                          )
+                        : Switch(
+                            value: _isOnline,
+                            onChanged: _isUpdatingStatus ? null : _updateOnlineStatus,
+                            activeColor: _successColor,
+                            activeTrackColor: _successColor.withOpacity(0.3),
+                            inactiveThumbColor: const Color.fromARGB(255, 0, 0, 0),
+                            inactiveTrackColor: const Color.fromARGB(255, 255, 255, 255).withOpacity(0.3),
+                                      trackOutlineColor: MaterialStateProperty.all(const Color.fromARGB(255, 0, 0, 0)), // 🔴 border color
+  trackOutlineWidth: MaterialStateProperty.all(2), // 🔴 border width
+                          ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Divider(),
+                ),
+                
                 _buildDrawerItem(
                   icon: Icons.dashboard_rounded,
                   title: 'Dashboard',
@@ -585,93 +756,210 @@ class _TherapistDashboardState extends State<TherapistDashboard>
           ),
         ],
       ),
-      child: Row(
+      child: Column(
         children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: therapist['image'] != null
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Image.network(
-                      therapist['image'],
-                      fit: BoxFit.cover,
+          Row(
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
-                  )
-                : Center(
-                    child: Text(
-                      therapist['name']?.substring(0, 1).toUpperCase() ?? 'T',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        color: _primaryColor,
-                      ),
-                    ),
-                  ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _getGreeting(),
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  therapist['name'] ?? 'Therapist',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: therapist['status'] == true ? _successColor : _warningColor,
-                          shape: BoxShape.circle,
+                child: therapist['image'] != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.network(
+                          therapist['image'],
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : Center(
+                        child: Text(
+                          therapist['name']?.substring(0, 1).toUpperCase() ?? 'T',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: _primaryColor,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        therapist['status'] == true ? 'Active' : 'Inactive',
-                        style: const TextStyle(
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _getGreeting(),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      therapist['name'] ?? 'Therapist',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: therapist['status'] == true ? _successColor : _warningColor,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                therapist['status'] == true ? 'Active' : 'Inactive',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _isOnline 
+                                ? const Color.fromARGB(255, 255, 255, 255).withOpacity(0.2)
+                                : Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: _isOnline ? const Color.fromARGB(255, 254, 254, 254) : Colors.grey,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                _isOnline ? 'Online' : 'Offline',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 20),
+          
+          // Online Status Switch
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  _isOnline ? Icons.wifi_rounded : Icons.wifi_off_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Online Status',
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 12,
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _isOnline 
+                            ? 'Available for new bookings'
+                            : 'Not accepting new bookings for today',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 12,
                         ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(width: 12),
+_isUpdatingStatus
+    ? const SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+        ),
+      )
+    : Container(
+        padding: const EdgeInsets.all(2), // space between border & switch
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20), // rounded edges
+        ),
+        child: Switch(
+          value: _isOnline,
+          onChanged: _isUpdatingStatus ? null : _updateOnlineStatus,
+          activeColor: _successColor,
+          activeTrackColor: const Color.fromARGB(255, 255, 255, 255).withOpacity(0.9),
+          inactiveThumbColor: const Color.fromARGB(255, 255, 255, 255),
+          inactiveTrackColor: const Color.fromARGB(255, 255, 255, 255).withOpacity(0.1),
+          trackOutlineColor: MaterialStateProperty.all(const Color.fromARGB(255, 255, 255, 255)), // 🔴 border color
+  trackOutlineWidth: MaterialStateProperty.all(2), // 🔴 border width
+        ),
+      ),
+
               ],
             ),
           ),
