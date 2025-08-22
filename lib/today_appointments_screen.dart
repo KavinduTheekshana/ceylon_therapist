@@ -28,7 +28,7 @@ class _TodayAppointmentsScreenState extends State<TodayAppointmentsScreen>
   String? _errorMessage;
 
   // Modern color scheme
-  static const Color _primaryColor = Color(0xFF2563EB);
+  static const Color _primaryColor = Color(0xFF9a563a);
   static const Color _surfaceColor = Color(0xFFFAFBFF);
   static const Color _cardColor = Colors.white;
   static const Color _textPrimary = Color(0xFF111827);
@@ -673,7 +673,7 @@ class _TodayAppointmentsScreenState extends State<TodayAppointmentsScreen>
                     child: FilledButton(
                       onPressed: () => _confirmAppointment(appointment),
                       style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF059669),
+                        backgroundColor: const Color(0xFF9a563a),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
@@ -1020,8 +1020,8 @@ void _showAppointmentDetails(Map<String, dynamic> appointment) {
                             _confirmAppointment(appointment);
                           },
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF059669),
-                            side: const BorderSide(color: Color(0xFF059669)),
+                            foregroundColor: const Color(0xFF9a563a),
+                            side: const BorderSide(color: Color(0xFF9a563a)),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -1245,7 +1245,7 @@ void _showErrorMessage(String message) {
                 });
               },
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF059669),
+                backgroundColor: const Color(0xFF9a563a),
                 foregroundColor: Colors.white,
               ),
               child: const Text('Start Session'),

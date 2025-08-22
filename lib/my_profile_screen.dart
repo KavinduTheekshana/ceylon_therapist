@@ -193,12 +193,12 @@ class _MyProfileScreenState extends State<MyProfileScreen>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF9A563A).withOpacity(0.1),
+                  color: const Color(0xFF9a563a).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
                   Icons.info_outline,
-                  color: Color(0xFF9A563A),
+                  color: Color(0xFF9a563a),
                   size: 24,
                 ),
               ),
@@ -228,7 +228,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                 _updateProfile();
               },
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF9A563A),
+                backgroundColor: const Color(0xFF9a563a),
                 foregroundColor: Colors.white,
               ),
               child: const Text('Update & Logout'),
@@ -289,7 +289,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF9A563A),
+        backgroundColor: const Color(0xFF9a563a),
         foregroundColor: Colors.white,
         title: const Text(
           'My Profile',
@@ -319,7 +319,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           position: _slideAnimation,
           child: _isLoading
               ? const Center(
-                  child: CircularProgressIndicator(color: Color(0xFF9A563A)),
+                  child: CircularProgressIndicator(color: Color(0xFF9a563a)),
                 )
               : _buildProfileContent(),
         ),
@@ -343,8 +343,8 @@ class _MyProfileScreenState extends State<MyProfileScreen>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  const Color(0xFF9A563A),
-                  const Color(0xFF9A563A).withOpacity(0.8),
+                  const Color(0xFF9a563a),
+                  const Color(0xFF9a563a).withOpacity(0.8),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -352,7 +352,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF9A563A).withOpacity(0.3),
+                  color: const Color(0xFF9a563a).withOpacity(0.3),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -380,7 +380,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                                 style: const TextStyle(
                                   fontSize: 36,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF9A563A),
+                                  color: Color(0xFF9a563a),
                                 ),
                               )
                             : null,
@@ -396,7 +396,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                                   content: Text(
                                     'Change photo feature coming soon',
                                   ),
-                                  backgroundColor: Color(0xFF9A563A),
+                                  backgroundColor: Color(0xFF9a563a),
                                 ),
                               );
                             },
@@ -416,7 +416,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                               child: const Icon(
                                 Icons.camera_alt,
                                 size: 16,
-                                color: Color(0xFF9A563A),
+                                color: Color(0xFF9a563a),
                               ),
                             ),
                           ),
@@ -549,7 +549,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           children: [
             Row(
               children: [
-                const Icon(Icons.edit, color: Color(0xFF9A563A), size: 20),
+                const Icon(Icons.edit, color: Color(0xFF9a563a), size: 20),
                 const SizedBox(width: 8),
                 const Text(
                   'Edit Profile',
@@ -574,7 +574,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFF9A563A)),
+                  borderSide: const BorderSide(color: Color(0xFF9a563a)),
                 ),
               ),
             ),
@@ -618,7 +618,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFF9A563A)),
+                  borderSide: const BorderSide(color: Color(0xFF9a563a)),
                 ),
               ),
             ),
@@ -637,7 +637,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFF9A563A)),
+                  borderSide: const BorderSide(color: Color(0xFF9a563a)),
                 ),
               ),
             ),
@@ -668,7 +668,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           children: [
             Row(
               children: [
-                Icon(icon, color: const Color(0xFF9A563A), size: 20),
+                Icon(icon, color: const Color(0xFF9a563a), size: 20),
                 const SizedBox(width: 8),
                 Text(
                   title,
@@ -732,8 +732,8 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           child: OutlinedButton(
             onPressed: _isLoading ? null : _cancelEditing,
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF9A563A),
-              side: const BorderSide(color: Color(0xFF9A563A)),
+              foregroundColor: const Color(0xFF9a563a),
+              side: const BorderSide(color: Color(0xFF9a563a)),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -750,7 +750,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           child: ElevatedButton(
             onPressed: _isLoading ? null : _updateProfile,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF9A563A),
+              backgroundColor: const Color(0xFF9a563a),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
@@ -795,7 +795,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
               ),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF9A563A),
+              backgroundColor: const Color(0xFF9a563a),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -813,20 +813,20 @@ class _MyProfileScreenState extends State<MyProfileScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Settings feature coming soon'),
-                  backgroundColor: Color(0xFF9A563A),
+                  backgroundColor: Color(0xFF9a563a),
                 ),
               );
             },
-            icon: const Icon(Icons.settings, color: Color(0xFF9A563A)),
+            icon: const Icon(Icons.settings, color: Color(0xFF9a563a)),
             label: const Text(
               'Account Settings',
               style: TextStyle(
-                color: Color(0xFF9A563A),
+                color: Color(0xFF9a563a),
                 fontWeight: FontWeight.w600,
               ),
             ),
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFF9A563A)),
+              side: const BorderSide(color: Color(0xFF9a563a)),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -1018,7 +1018,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                       : const Text(
                           'Change Password',
                           style: TextStyle(
-                            color: Color(0xFF9A563A),
+                            color: Color(0xFF9a563a),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -1067,7 +1067,7 @@ class _ExpandableTextState extends State<ExpandableText> {
               _isExpanded ? 'Show less' : 'Show more',
               style: const TextStyle(
                 fontSize: 12,
-                color: Color(0xFF9A563A),
+                color: Color(0xFF9a563a),
                 fontWeight: FontWeight.w500,
               ),
             ),

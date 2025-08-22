@@ -37,13 +37,13 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
   final AudioPlayer _audioPlayer = AudioPlayer();
 
   // Modern color scheme
-  static const Color _primaryColor = Color(0xFF2563EB);
+  static const Color _primaryColor = Color(0xFF9a563a);
   static const Color _surfaceColor = Color(0xFFFAFBFF);
   static const Color _cardColor = Colors.white;
   static const Color _textPrimary = Color(0xFF111827);
   static const Color _textSecondary = Color(0xFF6B7280);
   static const Color _borderColor = Color(0xFFE5E7EB);
-  static const Color _successColor = Color(0xFF059669);
+  static const Color _successColor = Color(0xFF9a563a);
   static const Color _warningColor = Color(0xFFD97706);
   static const Color _errorColor = Color(0xFFDC2626);
 

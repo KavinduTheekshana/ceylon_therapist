@@ -27,7 +27,7 @@ class _MyAvailabilityScreenState extends State<MyAvailabilityScreen>
   int _currentViewIndex = 0; // 0: Calendar, 1: Weekly Schedule
 
   // Modern color scheme
-  static const Color _primaryColor = Color(0xFF2563EB);
+  static const Color _primaryColor = Color(0xFF9a563a);
   static const Color _surfaceColor = Color(0xFFFAFBFF);
   static const Color _cardColor = Colors.white;
   static const Color _textPrimary = Color(0xFF111827);
@@ -452,7 +452,7 @@ class _MyAvailabilityScreenState extends State<MyAvailabilityScreen>
                           }
                         },
                   style: FilledButton.styleFrom(
-                    backgroundColor: _warningColor,
+                    backgroundColor: _primaryColor,
                     foregroundColor: Colors.white,
                   ),
                   child: isSubmitting

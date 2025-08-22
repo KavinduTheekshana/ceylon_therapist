@@ -36,7 +36,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
   ];
 
   // Modern color scheme
-  static const Color _primaryColor = Color(0xFF2563EB);
+  static const Color _primaryColor = Color(0xFF9a563a);
   static const Color _surfaceColor = Color(0xFFFAFBFF);
   static const Color _cardColor = Colors.white;
   static const Color _textPrimary = Color(0xFF111827);
@@ -707,7 +707,7 @@ String _formatDate(String dateString) {
                   child: OutlinedButton(
                     onPressed: () => _showAppointmentDetails(appointment),
                     style: OutlinedButton.styleFrom(
-                      backgroundColor: const Color(0xFF059669),
+                      backgroundColor: const Color(0xFF9a563a),
                       foregroundColor: Colors.white,
                       side: const BorderSide(color: _borderColor),
                       padding: const EdgeInsets.symmetric(vertical: 12),

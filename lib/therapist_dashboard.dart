@@ -10,10 +10,7 @@ import 'api_service.dart';
 class TherapistDashboard extends StatefulWidget {
   final Map<String, dynamic> therapistData;
 
-  const TherapistDashboard({
-    super.key,
-    required this.therapistData,
-  });
+  const TherapistDashboard({super.key, required this.therapistData});
 
   @override
   State<TherapistDashboard> createState() => _TherapistDashboardState();
@@ -30,23 +27,23 @@ class _TherapistDashboardState extends State<TherapistDashboard>
   bool _isUpdatingStatus = false;
 
   // Modern color scheme
-  static const Color _primaryColor = Color(0xFF2563EB);
+  static const Color _primaryColor = Color(0xFF9a563a);
   static const Color _surfaceColor = Color(0xFFFAFBFF);
   static const Color _cardColor = Colors.white;
   static const Color _textPrimary = Color(0xFF111827);
   static const Color _textSecondary = Color(0xFF6B7280);
   static const Color _borderColor = Color(0xFFE5E7EB);
-  static const Color _successColor = Color(0xFF059669);
+  static const Color _successColor = Color.fromARGB(255, 134, 74, 49);
   static const Color _warningColor = Color(0xFFD97706);
   static const Color _errorColor = Color(0xFFDC2626);
 
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize online status from therapist data
     _isOnline = widget.therapistData['online_status'] ?? false;
-    
+
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
@@ -56,13 +53,13 @@ class _TherapistDashboardState extends State<TherapistDashboard>
       CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.03),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.03), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
 
     _animationController.forward();
   }
@@ -88,7 +85,7 @@ class _TherapistDashboardState extends State<TherapistDashboard>
         setState(() {
           _isOnline = newStatus;
         });
-        
+
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -108,7 +105,7 @@ class _TherapistDashboardState extends State<TherapistDashboard>
         setState(() {
           _isOnline = !newStatus;
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -127,7 +124,7 @@ class _TherapistDashboardState extends State<TherapistDashboard>
       setState(() {
         _isOnline = !newStatus;
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: ${e.toString()}'),
@@ -148,7 +145,7 @@ class _TherapistDashboardState extends State<TherapistDashboard>
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
-    
+
     if (mounted) {
       Navigator.pushReplacementNamed(context, '/login');
     }
@@ -165,10 +162,7 @@ class _TherapistDashboardState extends State<TherapistDashboard>
           ),
           title: const Text(
             'Logout',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: _textPrimary,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w600, color: _textPrimary),
           ),
           content: const Text(
             'Are you sure you want to logout?',
@@ -177,9 +171,7 @@ class _TherapistDashboardState extends State<TherapistDashboard>
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                foregroundColor: _textSecondary,
-              ),
+              style: TextButton.styleFrom(foregroundColor: _textSecondary),
               child: const Text('Cancel'),
             ),
             FilledButton(
@@ -203,7 +195,8 @@ class _TherapistDashboardState extends State<TherapistDashboard>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => TodayAppointmentsScreen(therapistData: widget.therapistData),
+        builder: (context) =>
+            TodayAppointmentsScreen(therapistData: widget.therapistData),
       ),
     );
   }
@@ -212,7 +205,8 @@ class _TherapistDashboardState extends State<TherapistDashboard>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => MyAppointmentsScreen(therapistData: widget.therapistData),
+        builder: (context) =>
+            MyAppointmentsScreen(therapistData: widget.therapistData),
       ),
     );
   }
@@ -221,7 +215,8 @@ class _TherapistDashboardState extends State<TherapistDashboard>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => MyServicesScreen(therapistData: widget.therapistData),
+        builder: (context) =>
+            MyServicesScreen(therapistData: widget.therapistData),
       ),
     );
   }
@@ -230,7 +225,8 @@ class _TherapistDashboardState extends State<TherapistDashboard>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => MyAvailabilityScreen(therapistData: widget.therapistData),
+        builder: (context) =>
+            MyAvailabilityScreen(therapistData: widget.therapistData),
       ),
     );
   }
@@ -239,7 +235,8 @@ class _TherapistDashboardState extends State<TherapistDashboard>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => MyProfileScreen(therapistData: widget.therapistData),
+        builder: (context) =>
+            MyProfileScreen(therapistData: widget.therapistData),
       ),
     );
   }
@@ -272,10 +269,7 @@ class _TherapistDashboardState extends State<TherapistDashboard>
         foregroundColor: _textPrimary,
         title: const Text(
           'Dashboard',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
         ),
         elevation: 0,
         surfaceTintColor: _cardColor,
@@ -315,8 +309,8 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                 const SizedBox(height: 24),
 
                 // Quick Stats
-                _buildQuickStats(services, therapist),
-                const SizedBox(height: 24),
+                // _buildQuickStats(services, therapist),
+                // const SizedBox(height: 24),
 
                 // Quick Actions
                 _buildQuickActions(),
@@ -347,10 +341,7 @@ class _TherapistDashboardState extends State<TherapistDashboard>
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              _successColor,
-              _successColor.withOpacity(0.8),
-            ],
+            colors: [_successColor, _successColor.withOpacity(0.8)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -437,10 +428,7 @@ class _TherapistDashboardState extends State<TherapistDashboard>
             padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  _primaryColor,
-                  _primaryColor.withOpacity(0.8),
-                ],
+                colors: [_primaryColor, _primaryColor.withOpacity(0.8)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -472,7 +460,8 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                         )
                       : Center(
                           child: Text(
-                            therapist['name']?.substring(0, 1).toUpperCase() ?? 'T',
+                            therapist['name']?.substring(0, 1).toUpperCase() ??
+                                'T',
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w700,
@@ -493,16 +482,16 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                 const SizedBox(height: 4),
                 Text(
                   therapist['email'] ?? '',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(20),
@@ -518,10 +507,18 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
-                        color: _isOnline 
-                            ? const Color.fromARGB(255, 255, 255, 255).withOpacity(0.2)
+                        color: _isOnline
+                            ? const Color.fromARGB(
+                                255,
+                                255,
+                                255,
+                                255,
+                              ).withOpacity(0.2)
                             : Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -532,7 +529,9 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                             width: 6,
                             height: 6,
                             decoration: BoxDecoration(
-                              color: _isOnline ? const Color.fromARGB(255, 255, 255, 255) : const Color.fromARGB(255, 255, 255, 255),
+                              color: _isOnline
+                                  ? const Color.fromARGB(255, 255, 255, 255)
+                                  : const Color.fromARGB(255, 255, 255, 255),
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -553,7 +552,7 @@ class _TherapistDashboardState extends State<TherapistDashboard>
               ],
             ),
           ),
-          
+
           // Navigation Items
           Expanded(
             child: ListView(
@@ -561,7 +560,10 @@ class _TherapistDashboardState extends State<TherapistDashboard>
               children: [
                 // Online status switch as first item
                 Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 2,
+                  ),
                   child: ListTile(
                     leading: Icon(
                       _isOnline ? Icons.wifi_rounded : Icons.wifi_off_rounded,
@@ -577,7 +579,9 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                       ),
                     ),
                     subtitle: Text(
-                      _isOnline ? 'Available for Today New bookings' : 'Not accepting bookings for today',
+                      _isOnline
+                          ? 'Available for Today New bookings'
+                          : 'Not accepting bookings for today',
                       style: TextStyle(
                         fontSize: 12,
                         color: const Color.fromARGB(255, 65, 65, 65),
@@ -589,30 +593,48 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(_primaryColor),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                _primaryColor,
+                              ),
                             ),
                           )
                         : Switch(
                             value: _isOnline,
-                            onChanged: _isUpdatingStatus ? null : _updateOnlineStatus,
+                            onChanged: _isUpdatingStatus
+                                ? null
+                                : _updateOnlineStatus,
                             activeColor: _successColor,
                             activeTrackColor: _successColor.withOpacity(0.3),
-                            inactiveThumbColor: const Color.fromARGB(255, 0, 0, 0),
-                            inactiveTrackColor: const Color.fromARGB(255, 255, 255, 255).withOpacity(0.3),
-                                      trackOutlineColor: MaterialStateProperty.all(const Color.fromARGB(255, 0, 0, 0)), // 🔴 border color
-  trackOutlineWidth: MaterialStateProperty.all(2), // 🔴 border width
+                            inactiveThumbColor: const Color.fromARGB(
+                              255,
+                              0,
+                              0,
+                              0,
+                            ),
+                            inactiveTrackColor: const Color.fromARGB(
+                              255,
+                              255,
+                              255,
+                              255,
+                            ).withOpacity(0.3),
+                            trackOutlineColor: MaterialStateProperty.all(
+                              const Color.fromARGB(255, 0, 0, 0),
+                            ), // 🔴 border color
+                            trackOutlineWidth: MaterialStateProperty.all(
+                              2,
+                            ), // 🔴 border width
                           ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                 ),
-                
+
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Divider(),
                 ),
-                
+
                 _buildDrawerItem(
                   icon: Icons.dashboard_rounded,
                   title: 'Dashboard',
@@ -659,12 +681,12 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                     _navigateToProfile();
                   },
                 ),
-                
+
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Divider(),
                 ),
-                
+
                 _buildDrawerItem(
                   icon: Icons.settings_rounded,
                   title: 'Settings',
@@ -726,9 +748,7 @@ class _TherapistDashboardState extends State<TherapistDashboard>
         ),
         selected: isSelected,
         selectedTileColor: _primaryColor.withOpacity(0.1),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         onTap: onTap,
       ),
     );
@@ -740,10 +760,7 @@ class _TherapistDashboardState extends State<TherapistDashboard>
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            _primaryColor,
-            _primaryColor.withOpacity(0.8),
-          ],
+          colors: [_primaryColor, _primaryColor.withOpacity(0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -784,7 +801,8 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                       )
                     : Center(
                         child: Text(
-                          therapist['name']?.substring(0, 1).toUpperCase() ?? 'T',
+                          therapist['name']?.substring(0, 1).toUpperCase() ??
+                              'T',
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
@@ -819,7 +837,10 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(20),
@@ -831,13 +852,17 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                                 width: 6,
                                 height: 6,
                                 decoration: BoxDecoration(
-                                  color: therapist['status'] == true ? _successColor : _warningColor,
+                                  color: therapist['status'] == true
+                                      ? _successColor
+                                      : _warningColor,
                                   shape: BoxShape.circle,
                                 ),
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                therapist['status'] == true ? 'Active' : 'Inactive',
+                                therapist['status'] == true
+                                    ? 'Active'
+                                    : 'Inactive',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 12,
@@ -849,10 +874,18 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
-                            color: _isOnline 
-                                ? const Color.fromARGB(255, 255, 255, 255).withOpacity(0.2)
+                            color: _isOnline
+                                ? const Color.fromARGB(
+                                    255,
+                                    255,
+                                    255,
+                                    255,
+                                  ).withOpacity(0.2)
                                 : Colors.white.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(20),
                           ),
@@ -863,7 +896,9 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                                 width: 6,
                                 height: 6,
                                 decoration: BoxDecoration(
-                                  color: _isOnline ? const Color.fromARGB(255, 254, 254, 254) : Colors.grey,
+                                  color: _isOnline
+                                      ? const Color.fromARGB(255, 254, 254, 254)
+                                      : Colors.grey,
                                   shape: BoxShape.circle,
                                 ),
                               ),
@@ -886,9 +921,9 @@ class _TherapistDashboardState extends State<TherapistDashboard>
               ),
             ],
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Online Status Switch
           Container(
             padding: const EdgeInsets.all(16),
@@ -922,7 +957,7 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        _isOnline 
+                        _isOnline
                             ? 'Available for new bookings'
                             : 'Not accepting new bookings for today',
                         style: TextStyle(
@@ -934,32 +969,58 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                   ),
                 ),
                 const SizedBox(width: 12),
-_isUpdatingStatus
-    ? const SizedBox(
-        width: 20,
-        height: 20,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-        ),
-      )
-    : Container(
-        padding: const EdgeInsets.all(2), // space between border & switch
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20), // rounded edges
-        ),
-        child: Switch(
-          value: _isOnline,
-          onChanged: _isUpdatingStatus ? null : _updateOnlineStatus,
-          activeColor: _successColor,
-          activeTrackColor: const Color.fromARGB(255, 255, 255, 255).withOpacity(0.9),
-          inactiveThumbColor: const Color.fromARGB(255, 255, 255, 255),
-          inactiveTrackColor: const Color.fromARGB(255, 255, 255, 255).withOpacity(0.1),
-          trackOutlineColor: MaterialStateProperty.all(const Color.fromARGB(255, 255, 255, 255)), // 🔴 border color
-  trackOutlineWidth: MaterialStateProperty.all(2), // 🔴 border width
-        ),
-      ),
-
+                _isUpdatingStatus
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                    : Container(
+                        padding: const EdgeInsets.all(
+                          2,
+                        ), // space between border & switch
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(
+                            20,
+                          ), // rounded edges
+                        ),
+                        child: Switch(
+                          value: _isOnline,
+                          onChanged: _isUpdatingStatus
+                              ? null
+                              : _updateOnlineStatus,
+                          activeColor: _successColor,
+                          activeTrackColor: const Color.fromARGB(
+                            255,
+                            255,
+                            255,
+                            255,
+                          ).withOpacity(0.9),
+                          inactiveThumbColor: const Color.fromARGB(
+                            255,
+                            255,
+                            255,
+                            255,
+                          ),
+                          inactiveTrackColor: const Color.fromARGB(
+                            255,
+                            255,
+                            255,
+                            255,
+                          ).withOpacity(0.1),
+                          trackOutlineColor: MaterialStateProperty.all(
+                            const Color.fromARGB(255, 255, 255, 255),
+                          ), // 🔴 border color
+                          trackOutlineWidth: MaterialStateProperty.all(
+                            2,
+                          ), // 🔴 border width
+                        ),
+                      ),
               ],
             ),
           ),
@@ -968,91 +1029,91 @@ _isUpdatingStatus
     );
   }
 
-  Widget _buildQuickStats(List<dynamic> services, Map<String, dynamic> therapist) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            title: 'Services',
-            value: services.length.toString(),
-            icon: Icons.medical_services_rounded,
-            color: _primaryColor,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _buildStatCard(
-            title: 'Availability Slots',
-            value: therapist['availability_count']?.toString() ?? '0',
-            icon: Icons.schedule_rounded,
-            color: _successColor,
-          ),
-        ),
-      ],
-    );
-  }
+  // Widget _buildQuickStats(List<dynamic> services, Map<String, dynamic> therapist) {
+  //   return Row(
+  //     children: [
+  //       Expanded(
+  //         child: _buildStatCard(
+  //           title: 'Services',
+  //           value: services.length.toString(),
+  //           icon: Icons.medical_services_rounded,
+  //           color: _primaryColor,
+  //         ),
+  //       ),
+  //       const SizedBox(width: 16),
+  //       Expanded(
+  //         child: _buildStatCard(
+  //           title: 'Availability Slots',
+  //           value: therapist['availability_count']?.toString() ?? '0',
+  //           icon: Icons.schedule_rounded,
+  //           color: _successColor,
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
 
-  Widget _buildStatCard({
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: _cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _borderColor, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 20,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: _textPrimary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 14,
-              color: _textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildStatCard({
+  //   required String title,
+  //   required String value,
+  //   required IconData icon,
+  //   required Color color,
+  // }) {
+  //   return Container(
+  //     padding: const EdgeInsets.all(20),
+  //     decoration: BoxDecoration(
+  //       color: _cardColor,
+  //       borderRadius: BorderRadius.circular(16),
+  //       border: Border.all(color: _borderColor, width: 1),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Colors.black.withOpacity(0.04),
+  //           blurRadius: 8,
+  //           offset: const Offset(0, 2),
+  //         ),
+  //       ],
+  //     ),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Row(
+  //           children: [
+  //             Container(
+  //               padding: const EdgeInsets.all(10),
+  //               decoration: BoxDecoration(
+  //                 color: color.withOpacity(0.1),
+  //                 borderRadius: BorderRadius.circular(12),
+  //               ),
+  //               child: Icon(
+  //                 icon,
+  //                 color: color,
+  //                 size: 20,
+  //               ),
+  //             ),
+  //             const Spacer(),
+  //             Text(
+  //               value,
+  //               style: const TextStyle(
+  //                 fontSize: 28,
+  //                 fontWeight: FontWeight.w700,
+  //                 color: _textPrimary,
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //         const SizedBox(height: 12),
+  //         Text(
+  //           title,
+  //           style: const TextStyle(
+  //             fontSize: 14,
+  //             color: _textSecondary,
+  //             fontWeight: FontWeight.w500,
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildQuickActions() {
     return Column(
@@ -1074,7 +1135,7 @@ _isUpdatingStatus
                 title: 'All Appointments',
                 subtitle: 'View & manage',
                 icon: Icons.calendar_today_rounded,
-                color: _primaryColor,
+                color: _successColor,
                 onTap: _navigateToAppointments,
               ),
             ),
@@ -1098,7 +1159,7 @@ _isUpdatingStatus
                 title: 'Availability',
                 subtitle: 'Set schedule',
                 icon: Icons.schedule_rounded,
-                color: _warningColor,
+                color: _successColor,
                 onTap: _navigateToAvailability,
               ),
             ),
@@ -1108,7 +1169,7 @@ _isUpdatingStatus
                 title: 'Profile',
                 subtitle: 'Update info',
                 icon: Icons.person_rounded,
-                color: const Color(0xFF7C3AED),
+                  color: _successColor,
                 onTap: _navigateToProfile,
               ),
             ),
@@ -1150,11 +1211,7 @@ _isUpdatingStatus
                 color: color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 24,
-              ),
+              child: Icon(icon, color: color, size: 24),
             ),
             const SizedBox(height: 16),
             Text(
@@ -1168,10 +1225,7 @@ _isUpdatingStatus
             const SizedBox(height: 4),
             Text(
               subtitle,
-              style: const TextStyle(
-                fontSize: 13,
-                color: _textSecondary,
-              ),
+              style: const TextStyle(fontSize: 13, color: _textSecondary),
             ),
           ],
         ),
@@ -1200,11 +1254,7 @@ _isUpdatingStatus
         children: [
           Row(
             children: [
-              Icon(
-                Icons.person_rounded,
-                color: _primaryColor,
-                size: 22,
-              ),
+              Icon(Icons.person_rounded, color: _primaryColor, size: 22),
               const SizedBox(width: 8),
               const Text(
                 'Profile Overview',
@@ -1219,9 +1269,15 @@ _isUpdatingStatus
           const SizedBox(height: 20),
           _buildInfoRow('Email', therapist['email'] ?? 'N/A'),
           _buildInfoRow('Phone', therapist['phone'] ?? 'N/A'),
-          _buildInfoRow('Work Start Date', _formatDate(therapist['work_start_date'] ?? '')),
-          _buildInfoRow('Last Login', _formatDate(therapist['last_login_at'] ?? '')),
-          
+          _buildInfoRow(
+            'Work Start Date',
+            _formatDate(therapist['work_start_date'] ?? ''),
+          ),
+          _buildInfoRow(
+            'Last Login',
+            _formatDate(therapist['last_login_at'] ?? ''),
+          ),
+
           if (therapist['bio'] != null && therapist['bio'].isNotEmpty) ...[
             const SizedBox(height: 8),
             const Text(
@@ -1316,7 +1372,10 @@ _isUpdatingStatus
               decoration: BoxDecoration(
                 color: _surfaceColor,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: _borderColor.withOpacity(0.5), width: 1),
+                border: Border.all(
+                  color: _borderColor.withOpacity(0.5),
+                  width: 1,
+                ),
               ),
               child: Row(
                 children: [
