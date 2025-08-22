@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'api_service.dart';
+import 'package:intl/intl.dart';
 
 class MyAppointmentsScreen extends StatefulWidget {
   final Map<String, dynamic> therapistData;
@@ -143,25 +144,28 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
     await _loadAppointments();
   }
 
-  String _formatDate(String dateString) {
-    try {
-      final date = DateTime.parse(dateString);
-      final now = DateTime.now();
-      final difference = date.difference(now).inDays;
 
-      if (difference == 0) {
-        return 'Today';
-      } else if (difference == 1) {
-        return 'Tomorrow';
-      } else if (difference == -1) {
-        return 'Yesterday';
-      } else {
-        return '${date.day}/${date.month}/${date.year}';
-      }
-    } catch (e) {
-      return dateString;
+
+String _formatDate(String dateString) {
+  try {
+    final date = DateTime.parse(dateString).toLocal();
+    final now = DateTime.now();
+    final difference = date.difference(DateTime(now.year, now.month, now.day)).inDays;
+
+    if (difference == 0) {
+      return 'Today';
+    } else if (difference == 1) {
+      return 'Tomorrow';
+    } else if (difference == -1) {
+      return 'Yesterday';
+    } else {
+      return DateFormat('dd/MM/yyyy').format(date);
     }
+  } catch (e) {
+    return dateString;
   }
+}
+
 
   String _formatTime(String timeString) {
     try {
