@@ -11,6 +11,116 @@ class ApiService {
     'Accept': 'application/json',
   };
 
+  // Get therapist preferences
+  static Future<Map<String, dynamic>> getTherapistPreferences() async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) {
+        return {'success': false, 'message': 'No access token found'};
+      }
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/therapist/preferences'),
+        headers: getAuthHeaders(token),
+      );
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': responseData['data']};
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to get preferences',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateTherapistPreferences({
+    String? preferredGender,
+    int? ageRangeStart,
+    int? ageRangeEnd,
+    String? preferredLanguage,
+    bool? acceptNewPatients,
+    bool? homeVisitsOnly,
+    bool? clinicVisitsOnly,
+    int? maxTravelDistance,
+    bool? weekendsAvailable,
+    bool? eveningsAvailable,
+  }) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) {
+        return {'success': false, 'message': 'No access token found'};
+      }
+
+      // Build request body with only non-null values
+      final Map<String, dynamic> requestBody = {};
+      
+      if (preferredGender != null) requestBody['preferred_gender'] = preferredGender;
+      if (ageRangeStart != null) requestBody['age_range_start'] = ageRangeStart;
+      if (ageRangeEnd != null) requestBody['age_range_end'] = ageRangeEnd;
+      if (preferredLanguage != null) requestBody['preferred_language'] = preferredLanguage;
+      if (acceptNewPatients != null) requestBody['accept_new_patients'] = acceptNewPatients;
+      if (homeVisitsOnly != null) requestBody['home_visits_only'] = homeVisitsOnly;
+      if (clinicVisitsOnly != null) requestBody['clinic_visits_only'] = clinicVisitsOnly;
+      if (maxTravelDistance != null) requestBody['max_travel_distance'] = maxTravelDistance;
+      if (weekendsAvailable != null) requestBody['weekends_available'] = weekendsAvailable;
+      if (eveningsAvailable != null) requestBody['evenings_available'] = eveningsAvailable;
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/therapist/preferences'),
+        headers: getAuthHeaders(token),
+        body: json.encode(requestBody),
+      );
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': responseData['data'], 'message': responseData['message']};
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to update preferences',
+          'errors': responseData['errors'],
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
+  }
+
+   static Future<Map<String, dynamic>> resetTherapistPreferences() async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) {
+        return {'success': false, 'message': 'No access token found'};
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/therapist/preferences/reset'),
+        headers: getAuthHeaders(token),
+      );
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': responseData['data'], 'message': responseData['message']};
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to reset preferences',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
+  }
+
+
   static Map<String, String> getAuthHeaders(String token) => {
     ...headers,
     'Authorization': 'Bearer $token',
@@ -604,3 +714,5 @@ class ApiService {
     }
   }
 }
+
+

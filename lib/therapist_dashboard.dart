@@ -6,6 +6,7 @@ import 'my_availability_screen.dart';
 import 'my_profile_screen.dart';
 import 'today_appointments_screen.dart';
 import 'api_service.dart';
+import 'settings_screen.dart';
 
 class TherapistDashboard extends StatefulWidget {
   final Map<String, dynamic> therapistData;
@@ -197,6 +198,16 @@ class _TherapistDashboardState extends State<TherapistDashboard>
       MaterialPageRoute(
         builder: (context) =>
             TodayAppointmentsScreen(therapistData: widget.therapistData),
+      ),
+    );
+  }
+
+  void _navigateToSettings() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            SettingsScreen(therapistData: widget.therapistData),
       ),
     );
   }
@@ -692,16 +703,7 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                   title: 'Settings',
                   onTap: () {
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text('Settings feature coming soon'),
-                        backgroundColor: _primaryColor,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    );
+                    _navigateToSettings();
                   },
                 ),
                 _buildDrawerItem(
@@ -1169,7 +1171,7 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                 title: 'Profile',
                 subtitle: 'Update info',
                 icon: Icons.person_rounded,
-                  color: _successColor,
+                color: _successColor,
                 onTap: _navigateToProfile,
               ),
             ),

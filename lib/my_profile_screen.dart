@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'api_service.dart';
+import 'settings_screen.dart';
 
 class MyProfileScreen extends StatefulWidget {
   final Map<String, dynamic> therapistData;
@@ -67,9 +68,11 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     _emailController.text = _profileData['email'] ?? '';
     _phoneController.text = _profileData['phone'] ?? '';
     _bioController.text = _profileData['bio'] ?? '';
-    
+
     // **NEW: Debug logging**
-    print('🔄 Profile initialized with: Name=${_profileData['name']}, Phone=${_profileData['phone']}, Bio=${_profileData['bio']}');
+    print(
+      '🔄 Profile initialized with: Name=${_profileData['name']}, Phone=${_profileData['phone']}, Bio=${_profileData['bio']}',
+    );
   }
 
   Future<void> _refreshProfile() async {
@@ -141,7 +144,9 @@ class _MyProfileScreenState extends State<MyProfileScreen>
         // Show success message and logout
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Profile updated successfully! Logging out to refresh data...'),
+            content: Text(
+              'Profile updated successfully! Logging out to refresh data...',
+            ),
             backgroundColor: Colors.green,
             duration: Duration(seconds: 2),
           ),
@@ -149,10 +154,9 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
         // Wait a moment for user to see the message, then logout
         await Future.delayed(const Duration(seconds: 2));
-        
+
         // **NEW: Logout after successful profile update**
         await _logoutAndRedirect();
-        
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -219,7 +223,9 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(foregroundColor: const Color(0xFF6B7280)),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF6B7280),
+              ),
               child: const Text('Cancel'),
             ),
             FilledButton(
@@ -244,22 +250,20 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     try {
       // Clear all stored data
       await ApiService.logout();
-      
+
       if (mounted) {
         // Navigate to login screen and clear all routes
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          '/login',
-          (route) => false,
-        );
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/login', (route) => false);
       }
     } catch (e) {
       print('Error during logout: $e');
       // If logout fails, still try to redirect
       if (mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          '/login',
-          (route) => false,
-        );
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/login', (route) => false);
       }
     }
   }
@@ -284,8 +288,10 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   @override
   Widget build(BuildContext context) {
     // **NEW: Debug logging to track current data**
-    print('🎨 Profile screen building with: Name=${_profileData['name']}, Phone=${_profileData['phone']}, Bio=${_profileData['bio']}');
-    
+    print(
+      '🎨 Profile screen building with: Name=${_profileData['name']}, Phone=${_profileData['phone']}, Bio=${_profileData['bio']}',
+    );
+
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
@@ -810,10 +816,11 @@ class _MyProfileScreenState extends State<MyProfileScreen>
           width: double.infinity,
           child: OutlinedButton.icon(
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Settings feature coming soon'),
-                  backgroundColor: Color(0xFF9a563a),
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      SettingsScreen(therapistData: widget.therapistData),
                 ),
               );
             },
