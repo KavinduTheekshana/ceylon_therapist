@@ -2,7 +2,7 @@ name: ceylon_therapist
 description: "Your Ayurvedic Practice, Streamlined."
 publish_to: "none"
 
-version: 1.0.8+8
+version: 1.1.4+14
 
 environment:
   sdk: ^3.8.1
@@ -16,7 +16,8 @@ dependencies:
   http: ^1.1.0
   shared_preferences: ^2.2.2
   cupertino_icons: ^1.0.8
-  connectivity_plus: ^4.0.2
+  # connectivity_plus: ^4.0.2
+  # internet_connection_checker: ^1.0.0+1
   url_launcher: ^6.2.2  # Add this for launching maps
 
 dev_dependencies:
