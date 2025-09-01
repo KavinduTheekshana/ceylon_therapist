@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 import 'therapist_dashboard.dart';
+import 'account_inactive_screen.dart'; // Add this import
 import 'api_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -124,6 +125,38 @@ class _LoginScreenState extends State<LoginScreen>
           );
         }
       } else {
+        // Check for specific error responses
+        final statusCode = result['status_code']; // Add this field in ApiService if needed
+        final data = result['data'];
+        
+        // Handle account inactive status (403 status)
+        if (statusCode == 403 && data != null && data['account_status'] == 'inactive') {
+          // Navigate to account inactive screen
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AccountInactiveScreen(
+                  therapistData: {
+                    'name': data['therapist']?['name'] ?? _emailController.text.split('@')[0],
+                    'email': _emailController.text.trim(),
+                  },
+                ),
+              ),
+            );
+          }
+          return;
+        }
+        
+        // Handle email verification required (403 status)
+        if (statusCode == 403 && data != null && data['requires_verification'] == true) {
+          setState(() {
+            _generalError = result['message'] ?? 'Email verification required. Please verify your email to continue.';
+          });
+          return;
+        }
+        
+        // Handle other errors
         setState(() {
           _generalError = result['message'] ?? 'Login failed. Please try again.';
         });

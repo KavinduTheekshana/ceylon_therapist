@@ -59,17 +59,25 @@ class ApiService {
 
       // Build request body with only non-null values
       final Map<String, dynamic> requestBody = {};
-      
-      if (preferredGender != null) requestBody['preferred_gender'] = preferredGender;
+
+      if (preferredGender != null)
+        requestBody['preferred_gender'] = preferredGender;
       if (ageRangeStart != null) requestBody['age_range_start'] = ageRangeStart;
       if (ageRangeEnd != null) requestBody['age_range_end'] = ageRangeEnd;
-      if (preferredLanguage != null) requestBody['preferred_language'] = preferredLanguage;
-      if (acceptNewPatients != null) requestBody['accept_new_patients'] = acceptNewPatients;
-      if (homeVisitsOnly != null) requestBody['home_visits_only'] = homeVisitsOnly;
-      if (clinicVisitsOnly != null) requestBody['clinic_visits_only'] = clinicVisitsOnly;
-      if (maxTravelDistance != null) requestBody['max_travel_distance'] = maxTravelDistance;
-      if (weekendsAvailable != null) requestBody['weekends_available'] = weekendsAvailable;
-      if (eveningsAvailable != null) requestBody['evenings_available'] = eveningsAvailable;
+      if (preferredLanguage != null)
+        requestBody['preferred_language'] = preferredLanguage;
+      if (acceptNewPatients != null)
+        requestBody['accept_new_patients'] = acceptNewPatients;
+      if (homeVisitsOnly != null)
+        requestBody['home_visits_only'] = homeVisitsOnly;
+      if (clinicVisitsOnly != null)
+        requestBody['clinic_visits_only'] = clinicVisitsOnly;
+      if (maxTravelDistance != null)
+        requestBody['max_travel_distance'] = maxTravelDistance;
+      if (weekendsAvailable != null)
+        requestBody['weekends_available'] = weekendsAvailable;
+      if (eveningsAvailable != null)
+        requestBody['evenings_available'] = eveningsAvailable;
 
       final response = await http.post(
         Uri.parse('$baseUrl/therapist/preferences'),
@@ -80,7 +88,11 @@ class ApiService {
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        return {'success': true, 'data': responseData['data'], 'message': responseData['message']};
+        return {
+          'success': true,
+          'data': responseData['data'],
+          'message': responseData['message'],
+        };
       } else {
         return {
           'success': false,
@@ -93,7 +105,7 @@ class ApiService {
     }
   }
 
-   static Future<Map<String, dynamic>> resetTherapistPreferences() async {
+  static Future<Map<String, dynamic>> resetTherapistPreferences() async {
     try {
       final token = await getAccessToken();
       if (token == null) {
@@ -108,7 +120,11 @@ class ApiService {
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        return {'success': true, 'data': responseData['data'], 'message': responseData['message']};
+        return {
+          'success': true,
+          'data': responseData['data'],
+          'message': responseData['message'],
+        };
       } else {
         return {
           'success': false,
@@ -119,7 +135,6 @@ class ApiService {
       return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
-
 
   static Map<String, String> getAuthHeaders(String token) => {
     ...headers,
@@ -140,14 +155,109 @@ class ApiService {
 
       final responseData = json.decode(response.body);
 
+      // Always return the status code for proper handling
       if (response.statusCode == 200) {
         // Check if the API returns success in the response
         if (responseData['success'] == true) {
-          return {'success': true, 'data': responseData['data']};
+          return {
+            'success': true,
+            'data': responseData['data'],
+            'status_code': response.statusCode,
+          };
         } else {
           return {
             'success': false,
             'message': responseData['message'] ?? 'Login failed',
+            'status_code': response.statusCode,
+            'data': responseData['data'],
+          };
+        }
+      } else if (response.statusCode == 401) {
+        // Unauthorized - Invalid credentials
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Invalid email or password',
+          'status_code': response.statusCode,
+          'data': responseData['data'],
+        };
+      } else if (response.statusCode == 403) {
+        // Forbidden - Account inactive or email not verified
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Access denied',
+          'status_code': response.statusCode,
+          'data':
+              responseData['data'], // This will contain account_status, requires_verification, etc.
+        };
+      } else {
+        // Other error status codes
+        return {
+          'success': false,
+          'message':
+              responseData['message'] ??
+              'Login failed with status ${response.statusCode}',
+          'status_code': response.statusCode,
+          'data': responseData['data'],
+        };
+      }
+    } on http.ClientException catch (e) {
+      return {
+        'success': false,
+        'message': 'Connection failed. Please check your internet connection.',
+        'status_code': 0, // Network error indicator
+      };
+    } on FormatException catch (e) {
+      return {
+        'success': false,
+        'message': 'Invalid server response format.',
+        'status_code': 0,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+        'status_code': 0,
+      };
+    }
+  }
+
+  // Register method for ApiService class
+  static Future<Map<String, dynamic>> register({
+    required String name,
+    required String email,
+    required String phone,
+    required String password,
+    required String confirmPassword,
+    String? bio,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/therapist/register/app'),
+        headers: headers,
+        body: json.encode({
+          'name': name,
+          'email': email,
+          'phone': phone,
+          'password': password,
+          'password_confirmation': confirmPassword,
+          if (bio != null && bio.isNotEmpty) 'bio': bio,
+        }),
+      );
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 201) {
+        if (responseData['success'] == true) {
+          return {
+            'success': true,
+            'data': responseData['data'],
+            'message': responseData['message'],
+          };
+        } else {
+          return {
+            'success': false,
+            'message': responseData['message'] ?? 'Registration failed',
+            'errors': responseData['errors'],
           };
         }
       } else {
@@ -155,7 +265,8 @@ class ApiService {
           'success': false,
           'message':
               responseData['message'] ??
-              'Login failed with status ${response.statusCode}',
+              'Registration failed with status ${response.statusCode}',
+          'errors': responseData['errors'],
         };
       }
     } on http.ClientException catch (e) {
@@ -170,111 +281,62 @@ class ApiService {
     }
   }
 
-// Register method for ApiService class
-static Future<Map<String, dynamic>> register({
-  required String name,
-  required String email,
-  required String phone,
-  required String password,
-  required String confirmPassword,
-  String? bio,
-}) async {
-  try {
-    final response = await http.post(
-      Uri.parse('$baseUrl/therapist/register/app'),
-      headers: headers,
-      body: json.encode({
-        'name': name,
-        'email': email,
-        'phone': phone,
-        'password': password,
-        'password_confirmation': confirmPassword,
-        if (bio != null && bio.isNotEmpty) 'bio': bio,
-      }),
-    );
+  // Add OTP verification method
+  static Future<Map<String, dynamic>> verifyRegistrationOtp({
+    required String email,
+    required String otp,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/therapist/verify-otp'),
+        headers: headers,
+        body: json.encode({'email': email, 'otp': otp}),
+      );
 
-    final responseData = json.decode(response.body);
+      final responseData = json.decode(response.body);
 
-    if (response.statusCode == 201) {
-      if (responseData['success'] == true) {
-        return {'success': true, 'data': responseData['data'], 'message': responseData['message']};
-      } else {
-        return {
-          'success': false,
-          'message': responseData['message'] ?? 'Registration failed',
-          'errors': responseData['errors'],
-        };
-      }
-    } else {
       return {
-        'success': false,
-        'message': responseData['message'] ?? 'Registration failed with status ${response.statusCode}',
-        'errors': responseData['errors'],
+        'success':
+            response.statusCode == 200 && responseData['success'] == true,
+        'message':
+            responseData['message'] ??
+            (response.statusCode == 200
+                ? 'OTP verified successfully'
+                : 'Invalid OTP'),
+        'data': responseData['data'],
       };
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
-  } on http.ClientException catch (e) {
-    return {
-      'success': false,
-      'message': 'Connection failed. Please check your internet connection.',
-    };
-  } on FormatException catch (e) {
-    return {'success': false, 'message': 'Invalid server response format.'};
-  } catch (e) {
-    return {'success': false, 'message': 'Network error: ${e.toString()}'};
   }
-}
 
-// Add OTP verification method
-static Future<Map<String, dynamic>> verifyRegistrationOtp({
-  required String email,
-  required String otp,
-}) async {
-  try {
-    final response = await http.post(
-      Uri.parse('$baseUrl/therapist/verify-otp'),
-      headers: headers,
-      body: json.encode({
-        'email': email,
-        'otp': otp,
-      }),
-    );
+  // Add resend OTP method
+  static Future<Map<String, dynamic>> resendRegistrationOtp({
+    required String email,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/therapist/resend-otp'),
+        headers: headers,
+        body: json.encode({'email': email}),
+      );
 
-    final responseData = json.decode(response.body);
+      final responseData = json.decode(response.body);
 
-    return {
-      'success': response.statusCode == 200 && responseData['success'] == true,
-      'message': responseData['message'] ?? (response.statusCode == 200 ? 'OTP verified successfully' : 'Invalid OTP'),
-      'data': responseData['data'],
-    };
-  } catch (e) {
-    return {'success': false, 'message': 'Network error: ${e.toString()}'};
+      return {
+        'success':
+            response.statusCode == 200 && responseData['success'] == true,
+        'message':
+            responseData['message'] ??
+            (response.statusCode == 200
+                ? 'OTP sent successfully'
+                : 'Failed to send OTP'),
+        'data': responseData['data'],
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
   }
-}
-
-// Add resend OTP method
-static Future<Map<String, dynamic>> resendRegistrationOtp({
-  required String email,
-}) async {
-  try {
-    final response = await http.post(
-      Uri.parse('$baseUrl/therapist/resend-otp'),
-      headers: headers,
-      body: json.encode({
-        'email': email,
-      }),
-    );
-
-    final responseData = json.decode(response.body);
-
-    return {
-      'success': response.statusCode == 200 && responseData['success'] == true,
-      'message': responseData['message'] ?? (response.statusCode == 200 ? 'OTP sent successfully' : 'Failed to send OTP'),
-      'data': responseData['data'],
-    };
-  } catch (e) {
-    return {'success': false, 'message': 'Network error: ${e.toString()}'};
-  }
-}
 
   // Forgot Password method
   static Future<Map<String, dynamic>> forgotPassword({
@@ -820,5 +882,3 @@ static Future<Map<String, dynamic>> resendRegistrationOtp({
     }
   }
 }
-
-
