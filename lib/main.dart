@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'therapist_dashboard.dart';
 import 'api_service.dart';
+import 'register_screen.dart';
 
 void main() {
   runApp(const TherapistApp());
@@ -27,14 +28,13 @@ class TherapistApp extends StatelessWidget {
           800: const Color(0xFF7C3B24),
           900: const Color(0xFF6B200F),
         }),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF9A563A),
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF9A563A)),
         useMaterial3: true,
       ),
       home: const SplashScreen(),
       routes: {
         '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(), // Add this line
         '/dashboard': (context) => const DashboardWrapper(),
       },
       debugShowCheckedModeBanner: false,
@@ -59,9 +59,9 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _checkLoginStatus() async {
     // Add a small delay for splash effect
     await Future.delayed(const Duration(seconds: 2));
-    
+
     final isLoggedIn = await ApiService.isLoggedIn();
-    
+
     if (mounted) {
       if (isLoggedIn) {
         final therapistData = await ApiService.getTherapistData();
@@ -69,7 +69,8 @@ class _SplashScreenState extends State<SplashScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => TherapistDashboard(therapistData: therapistData),
+              builder: (context) =>
+                  TherapistDashboard(therapistData: therapistData),
             ),
           );
         } else {
@@ -117,7 +118,7 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
             const SizedBox(height: 32),
-            
+
             // App Title
             const Text(
               'Therapist App',
@@ -128,7 +129,7 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            
+
             // Subtitle
             Text(
               'Professional Therapy Management',
@@ -138,7 +139,7 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
             const SizedBox(height: 48),
-            
+
             // Loading Indicator
             const SizedBox(
               width: 40,
@@ -166,27 +167,23 @@ class DashboardWrapper extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF9A563A),
-              ),
+              child: CircularProgressIndicator(color: Color(0xFF9A563A)),
             ),
           );
         }
-        
+
         if (snapshot.hasData && snapshot.data != null) {
           return TherapistDashboard(therapistData: snapshot.data!);
         }
-        
+
         // If no data, redirect to login
         WidgetsBinding.instance.addPostFrameCallback((_) {
           Navigator.pushReplacementNamed(context, '/login');
         });
-        
+
         return const Scaffold(
           body: Center(
-            child: CircularProgressIndicator(
-              color: Color(0xFF9A563A),
-            ),
+            child: CircularProgressIndicator(color: Color(0xFF9A563A)),
           ),
         );
       },

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'forgot_password_screen.dart';
+import 'register_screen.dart';
 import 'therapist_dashboard.dart';
 import 'api_service.dart';
 
@@ -471,6 +472,41 @@ class _LoginScreenState extends State<LoginScreen>
                                       ),
                                     ),
                             ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Don't have account section
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Don\'t have an account? ',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 16,
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: _isLoading ? null : () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const RegisterScreen(),
+                                    ),
+                                  );
+                                },
+                                child: Text(
+                                  'Register',
+                                  style: TextStyle(
+                                    color: _isLoading 
+                                        ? Colors.grey 
+                                        : const Color(0xFF9A563A),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 32),
                         ],

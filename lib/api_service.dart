@@ -3,8 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // static const String baseUrl = 'http://127.0.0.1:8000/api';
-  static const String baseUrl = 'https://app.ceylonayurvedahealth.co.uk/api';
+  static const String baseUrl = 'http://127.0.0.1:8000/api';
+  // static const String baseUrl = 'https://app.ceylonayurvedahealth.co.uk/api';
 
   static Map<String, String> get headers => {
     'Content-Type': 'application/json',
@@ -169,6 +169,112 @@ class ApiService {
       return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
+
+// Register method for ApiService class
+static Future<Map<String, dynamic>> register({
+  required String name,
+  required String email,
+  required String phone,
+  required String password,
+  required String confirmPassword,
+  String? bio,
+}) async {
+  try {
+    final response = await http.post(
+      Uri.parse('$baseUrl/therapist/register/app'),
+      headers: headers,
+      body: json.encode({
+        'name': name,
+        'email': email,
+        'phone': phone,
+        'password': password,
+        'password_confirmation': confirmPassword,
+        if (bio != null && bio.isNotEmpty) 'bio': bio,
+      }),
+    );
+
+    final responseData = json.decode(response.body);
+
+    if (response.statusCode == 201) {
+      if (responseData['success'] == true) {
+        return {'success': true, 'data': responseData['data'], 'message': responseData['message']};
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Registration failed',
+          'errors': responseData['errors'],
+        };
+      }
+    } else {
+      return {
+        'success': false,
+        'message': responseData['message'] ?? 'Registration failed with status ${response.statusCode}',
+        'errors': responseData['errors'],
+      };
+    }
+  } on http.ClientException catch (e) {
+    return {
+      'success': false,
+      'message': 'Connection failed. Please check your internet connection.',
+    };
+  } on FormatException catch (e) {
+    return {'success': false, 'message': 'Invalid server response format.'};
+  } catch (e) {
+    return {'success': false, 'message': 'Network error: ${e.toString()}'};
+  }
+}
+
+// Add OTP verification method
+static Future<Map<String, dynamic>> verifyRegistrationOtp({
+  required String email,
+  required String otp,
+}) async {
+  try {
+    final response = await http.post(
+      Uri.parse('$baseUrl/therapist/verify-otp'),
+      headers: headers,
+      body: json.encode({
+        'email': email,
+        'otp': otp,
+      }),
+    );
+
+    final responseData = json.decode(response.body);
+
+    return {
+      'success': response.statusCode == 200 && responseData['success'] == true,
+      'message': responseData['message'] ?? (response.statusCode == 200 ? 'OTP verified successfully' : 'Invalid OTP'),
+      'data': responseData['data'],
+    };
+  } catch (e) {
+    return {'success': false, 'message': 'Network error: ${e.toString()}'};
+  }
+}
+
+// Add resend OTP method
+static Future<Map<String, dynamic>> resendRegistrationOtp({
+  required String email,
+}) async {
+  try {
+    final response = await http.post(
+      Uri.parse('$baseUrl/therapist/resend-otp'),
+      headers: headers,
+      body: json.encode({
+        'email': email,
+      }),
+    );
+
+    final responseData = json.decode(response.body);
+
+    return {
+      'success': response.statusCode == 200 && responseData['success'] == true,
+      'message': responseData['message'] ?? (response.statusCode == 200 ? 'OTP sent successfully' : 'Failed to send OTP'),
+      'data': responseData['data'],
+    };
+  } catch (e) {
+    return {'success': false, 'message': 'Network error: ${e.toString()}'};
+  }
+}
 
   // Forgot Password method
   static Future<Map<String, dynamic>> forgotPassword({
