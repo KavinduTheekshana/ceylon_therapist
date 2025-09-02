@@ -628,10 +628,10 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                               255,
                               255,
                             ).withOpacity(0.3),
-                            trackOutlineColor: MaterialStateProperty.all(
+                            trackOutlineColor: WidgetStateProperty.all(
                               const Color.fromARGB(255, 0, 0, 0),
                             ), // 🔴 border color
-                            trackOutlineWidth: MaterialStateProperty.all(
+                            trackOutlineWidth: WidgetStateProperty.all(
                               2,
                             ), // 🔴 border width
                           ),
@@ -1015,10 +1015,10 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                             255,
                             255,
                           ).withOpacity(0.1),
-                          trackOutlineColor: MaterialStateProperty.all(
+                          trackOutlineColor: WidgetStateProperty.all(
                             const Color.fromARGB(255, 255, 255, 255),
                           ), // 🔴 border color
-                          trackOutlineWidth: MaterialStateProperty.all(
+                          trackOutlineWidth: WidgetStateProperty.all(
                             2,
                           ), // 🔴 border width
                         ),

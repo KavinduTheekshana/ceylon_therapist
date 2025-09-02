@@ -3,8 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://127.0.0.1:8000/api';
-  // static const String baseUrl = 'https://app.ceylonayurvedahealth.co.uk/api';
+  // static const String baseUrl = 'http://127.0.0.1:8000/api';
+  static const String baseUrl = 'https://app.ceylonayurvedahealth.co.uk/api';
 
   static Map<String, String> get headers => {
     'Content-Type': 'application/json',
@@ -60,24 +60,32 @@ class ApiService {
       // Build request body with only non-null values
       final Map<String, dynamic> requestBody = {};
 
-      if (preferredGender != null)
+      if (preferredGender != null) {
         requestBody['preferred_gender'] = preferredGender;
+      }
       if (ageRangeStart != null) requestBody['age_range_start'] = ageRangeStart;
       if (ageRangeEnd != null) requestBody['age_range_end'] = ageRangeEnd;
-      if (preferredLanguage != null)
+      if (preferredLanguage != null) {
         requestBody['preferred_language'] = preferredLanguage;
-      if (acceptNewPatients != null)
+      }
+      if (acceptNewPatients != null) {
         requestBody['accept_new_patients'] = acceptNewPatients;
-      if (homeVisitsOnly != null)
+      }
+      if (homeVisitsOnly != null) {
         requestBody['home_visits_only'] = homeVisitsOnly;
-      if (clinicVisitsOnly != null)
+      }
+      if (clinicVisitsOnly != null) {
         requestBody['clinic_visits_only'] = clinicVisitsOnly;
-      if (maxTravelDistance != null)
+      }
+      if (maxTravelDistance != null) {
         requestBody['max_travel_distance'] = maxTravelDistance;
-      if (weekendsAvailable != null)
+      }
+      if (weekendsAvailable != null) {
         requestBody['weekends_available'] = weekendsAvailable;
-      if (eveningsAvailable != null)
+      }
+      if (eveningsAvailable != null) {
         requestBody['evenings_available'] = eveningsAvailable;
+      }
 
       final response = await http.post(
         Uri.parse('$baseUrl/therapist/preferences'),
@@ -200,13 +208,13 @@ class ApiService {
           'data': responseData['data'],
         };
       }
-    } on http.ClientException catch (e) {
+    } on http.ClientException {
       return {
         'success': false,
         'message': 'Connection failed. Please check your internet connection.',
         'status_code': 0, // Network error indicator
       };
-    } on FormatException catch (e) {
+    } on FormatException {
       return {
         'success': false,
         'message': 'Invalid server response format.',
@@ -269,12 +277,12 @@ class ApiService {
           'errors': responseData['errors'],
         };
       }
-    } on http.ClientException catch (e) {
+    } on http.ClientException {
       return {
         'success': false,
         'message': 'Connection failed. Please check your internet connection.',
       };
-    } on FormatException catch (e) {
+    } on FormatException {
       return {'success': false, 'message': 'Invalid server response format.'};
     } catch (e) {
       return {'success': false, 'message': 'Network error: ${e.toString()}'};

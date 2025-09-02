@@ -722,8 +722,9 @@ For complete terms and conditions, please visit our website or contact support.
                                           : (value) {
                                               setState(() {
                                                 _acceptTerms = value ?? false;
-                                                if (_acceptTerms)
+                                                if (_acceptTerms) {
                                                   _generalError = null;
+                                                }
                                               });
                                             },
                                       activeColor: const Color(0xFF9A563A),
@@ -735,8 +736,9 @@ For complete terms and conditions, please visit our website or contact support.
                                             : () {
                                                 setState(() {
                                                   _acceptTerms = !_acceptTerms;
-                                                  if (_acceptTerms)
+                                                  if (_acceptTerms) {
                                                     _generalError = null;
+                                                  }
                                                 });
                                               },
                                         child: Padding(

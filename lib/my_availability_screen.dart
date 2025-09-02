@@ -18,8 +18,8 @@ class _MyAvailabilityScreenState extends State<MyAvailabilityScreen>
 
   bool _isLoading = true;
   List<dynamic> _weeklyAvailability = [];
-  Set<DateTime> _holidayRequests = <DateTime>{};
-  Set<DateTime> _approvedHolidays = <DateTime>{};
+  final Set<DateTime> _holidayRequests = <DateTime>{};
+  final Set<DateTime> _approvedHolidays = <DateTime>{};
   String? _errorMessage;
 
   DateTime _selectedMonth = DateTime.now();
@@ -1023,7 +1023,7 @@ class _MyAvailabilityScreenState extends State<MyAvailabilityScreen>
                 }),
               ),
             );
-          }).where((widget) => widget is! SizedBox).toList(),
+          }).where((widget) => widget is! SizedBox),
           const SizedBox(height: 16),
         ],
       ),
