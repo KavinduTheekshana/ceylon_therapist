@@ -289,6 +289,109 @@ class ApiService {
     }
   }
 
+static Future<Map<String, dynamic>> deleteAccount({
+  required String password,
+  String? reason,
+}) async {
+  try {
+    final token = await getAccessToken();
+    if (token == null) {
+      return {'success': false, 'message': 'No access token found'};
+    }
+
+    final response = await http.delete(
+      Uri.parse('$baseUrl/therapist/account'),
+      headers: getAuthHeaders(token),
+      body: json.encode({
+        'password': password,
+        if (reason != null && reason.isNotEmpty) 'deletion_reason': reason,
+      }),
+    );
+
+    final responseData = json.decode(response.body);
+
+    if (response.statusCode == 200) {
+      // Clear all stored data after successful deletion
+      await logout();
+      
+      return {
+        'success': true,
+        'message': responseData['message'] ?? 'Account deleted successfully',
+      };
+    } else if (response.statusCode == 401) {
+      return {
+        'success': false,
+        'message': responseData['message'] ?? 'Invalid password provided',
+      };
+    } else if (response.statusCode == 409) {
+      return {
+        'success': false,
+        'message': responseData['message'] ?? 'Cannot delete account with pending appointments',
+        'data': responseData['data'], // May contain pending appointments info
+      };
+    } else {
+      return {
+        'success': false,
+        'message': responseData['message'] ?? 'Failed to delete account',
+      };
+    }
+  } catch (e) {
+    return {'success': false, 'message': 'Network error: ${e.toString()}'};
+  }
+}
+
+// Get account deletion info (pending appointments, etc.)
+static Future<Map<String, dynamic>> getAccountDeletionInfo() async {
+  try {
+    final token = await getAccessToken();
+    if (token == null) {
+      return {'success': false, 'message': 'No access token found'};
+    }
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/therapist/account/deletion-info'),
+      headers: getAuthHeaders(token),
+    );
+
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+      return {
+        'success': responseData['success'] ?? false,
+        'data': responseData['data'] ?? {
+          'pending_bookings_count': 0,
+          'today_bookings_count': 0,
+          'upcoming_bookings_count': 0,
+          'pending_holiday_requests': 0,
+          'can_delete': true,
+          'is_online': false,
+          'deletion_constraints': {},
+          'constraints_message': '',
+        },
+        'message': responseData['message'],
+      };
+    } else {
+      // Handle non-200 status codes
+      try {
+        final responseData = json.decode(response.body);
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to get account info',
+        };
+      } catch (e) {
+        return {
+          'success': false,
+          'message': 'Server error (${response.statusCode})',
+        };
+      }
+    }
+  } catch (e) {
+    return {
+      'success': false,
+      'message': 'Network error: ${e.toString()}',
+    };
+  }
+}
+
   // Add OTP verification method
   static Future<Map<String, dynamic>> verifyRegistrationOtp({
     required String email,

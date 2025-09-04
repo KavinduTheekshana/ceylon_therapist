@@ -233,7 +233,7 @@ class _RegistrationOtpScreenState extends State<RegistrationOtpScreen>
               const SizedBox(width: 12),
               const Expanded(
                 child: Text(
-                  'Account Verified!',
+                  'Account Created!',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1F2937),
@@ -256,7 +256,7 @@ class _RegistrationOtpScreenState extends State<RegistrationOtpScreen>
               ),
               const SizedBox(height: 16),
               const Text(
-                'Your therapist account has been successfully verified and activated. You can now login and start managing your practice.',
+                'Your therapist account has been successfully Created. You can now login and start managing your practice.',
                 style: TextStyle(
                   color: Color(0xFF6B7280),
                 ),

@@ -103,12 +103,12 @@ class _SettingsScreenState extends State<SettingsScreen>
     try {
       // Load preferences from API
       final apiResult = await ApiService.getTherapistPreferences();
-      
+
       if (apiResult['success']) {
         final preferences = apiResult['data'];
         final serviceUser = preferences['service_user_preferences'];
         final serviceDelivery = preferences['service_delivery'];
-        
+
         setState(() {
           // Service User Preferences from API
           _selectedGender = serviceUser['preferred_gender'] ?? 'all';
@@ -117,20 +117,20 @@ class _SettingsScreenState extends State<SettingsScreen>
             (serviceUser['age_range']['end'] ?? 65).toDouble(),
           );
           _preferredLanguage = serviceUser['preferred_language'] ?? 'english';
-          
+
           // Service Delivery from API
           _acceptNewPatients = serviceDelivery['accept_new_patients'] ?? true;
           _homeVisitsOnly = serviceDelivery['home_visits_only'] ?? false;
           _clinicVisitsOnly = serviceDelivery['clinic_visits_only'] ?? false;
-          _maxTravelDistance = serviceDelivery['max_travel_distance']?.toString() ?? '10';
+          _maxTravelDistance =
+              serviceDelivery['max_travel_distance']?.toString() ?? '10';
           _weekendsAvailable = serviceDelivery['weekends_available'] ?? false;
           _eveningsAvailable = serviceDelivery['evenings_available'] ?? false;
         });
       }
-      
+
       // Load local app settings
       await _loadLocalSettings();
-      
     } catch (e) {
       print('Error loading settings: $e');
       _showErrorMessage('Failed to load settings from server');
@@ -143,10 +143,348 @@ class _SettingsScreenState extends State<SettingsScreen>
     }
   }
 
+  // Add these methods to your _SettingsScreenState class in settings_screen.dart
+
+  // Add this method for account deletion
+  Future<void> _showDeleteAccountDialog() async {
+    // First check if account can be deleted
+    setState(() {
+      _isLoading = true;
+    });
+
+    final accountInfo = await ApiService.getAccountDeletionInfo();
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (!accountInfo['success']) {
+      _showErrorMessage(
+        'Failed to check account status: ${accountInfo['message']}',
+      );
+      return;
+    }
+
+    final data = accountInfo['data'];
+    final hasPendingAppointments = data['pending_bookings_count'] > 0;
+    final upcomingAppointments = data['pending_bookings_count'] ?? 0;
+
+    if (hasPendingAppointments) {
+      // Show warning about pending appointments
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Row(
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.orange,
+                  size: 28,
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Cannot Delete Account',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: _textPrimary,
+                    fontSize: 18,
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'You have $upcomingAppointments pending appointment${upcomingAppointments == 1 ? '' : 's'}. You must complete or cancel all appointments before deleting your account.',
+                  style: const TextStyle(color: _textSecondary, fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.orange, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Please manage your appointments first, then try again.',
+                          style: TextStyle(
+                            color: Colors.orange.shade800,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK', style: TextStyle(color: _primaryColor)),
+              ),
+            ],
+          );
+        },
+      );
+      return;
+    }
+
+    // Show deletion confirmation dialog
+    final TextEditingController passwordController = TextEditingController();
+    final TextEditingController reasonController = TextEditingController();
+    bool isDeleting = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: Row(
+                children: [
+                  Icon(
+                    Icons.delete_forever_rounded,
+                    color: _errorColor,
+                    size: 28,
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Delete Account',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: _textPrimary,
+                      fontSize: 18,
+                    ),
+                  ),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: _errorColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: _errorColor.withOpacity(0.3)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.warning_rounded,
+                                color: _errorColor,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'This action cannot be undone',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: _errorColor,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Deleting your account will permanently remove:\n• Your profile and credentials\n• All appointment history\n• Personal preferences\n• Any stored data',
+                            style: TextStyle(
+                              color: _errorColor.withOpacity(0.9),
+                              fontSize: 12,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Enter your password to confirm:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: _textPrimary,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: passwordController,
+                      obscureText: true,
+                      enabled: !isDeleting,
+                      decoration: InputDecoration(
+                        hintText: 'Your current password',
+                        hintStyle: const TextStyle(
+                          color: _textSecondary,
+                          fontSize: 14,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: _borderColor),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: _primaryColor,
+                            width: 2,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.lock_outline,
+                          size: 20,
+                          color: _textSecondary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Reason for deletion (optional):',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: _textPrimary,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: reasonController,
+                      enabled: !isDeleting,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        hintText:
+                            'Help us improve by sharing why you\'re leaving...',
+                        hintStyle: const TextStyle(
+                          color: _textSecondary,
+                          fontSize: 14,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: _borderColor),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: _primaryColor,
+                            width: 2,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.all(16),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isDeleting
+                      ? null
+                      : () {
+                          passwordController.dispose();
+                          reasonController.dispose();
+                          Navigator.of(dialogContext).pop();
+                        },
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: _textSecondary),
+                  ),
+                ),
+                FilledButton(
+                  onPressed:
+                      isDeleting || passwordController.text.trim().isEmpty
+                      ? null
+                      : () async {
+                          setDialogState(() {
+                            isDeleting = true;
+                          });
+
+                          final result = await ApiService.deleteAccount(
+                            password: passwordController.text.trim(),
+                            reason: reasonController.text.trim().isEmpty
+                                ? null
+                                : reasonController.text.trim(),
+                          );
+
+                          passwordController.dispose();
+                          reasonController.dispose();
+                          Navigator.of(dialogContext).pop();
+
+                          if (result['success']) {
+                            // Account deleted successfully, navigate to login
+                            _showSuccessMessage('Account deleted successfully');
+                            Navigator.of(
+                              context,
+                            ).pushReplacementNamed('/login');
+                          } else {
+                            _showErrorMessage(
+                              result['message'] ?? 'Failed to delete account',
+                            );
+                          }
+                        },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _errorColor,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: isDeleting
+                      ? const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Text('Deleting...'),
+                          ],
+                        )
+                      : const Text('Delete Account'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<void> _loadLocalSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       setState(() {
         // App Settings (local only)
         _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
@@ -195,7 +533,9 @@ class _SettingsScreenState extends State<SettingsScreen>
           });
           _showErrorMessage(errorMessage);
         } else {
-          _showErrorMessage(apiResult['message'] ?? 'Failed to save preferences');
+          _showErrorMessage(
+            apiResult['message'] ?? 'Failed to save preferences',
+          );
         }
       }
     } catch (e) {
@@ -210,7 +550,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   Future<void> _saveLocalSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Save app settings locally
       await prefs.setBool('notifications_enabled', _notificationsEnabled);
       await prefs.setBool('sound_enabled', _soundEnabled);
@@ -269,7 +609,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             FilledButton(
               onPressed: () async {
                 Navigator.of(context).pop();
-                
+
                 setState(() {
                   _isSaving = true;
                 });
@@ -277,13 +617,13 @@ class _SettingsScreenState extends State<SettingsScreen>
                 try {
                   // Reset preferences on server
                   final result = await ApiService.resetTherapistPreferences();
-                  
+
                   if (result['success']) {
                     // Update local state with server response
                     final preferences = result['data'];
                     final serviceUser = preferences['service_user_preferences'];
                     final serviceDelivery = preferences['service_delivery'];
-                    
+
                     setState(() {
                       _selectedGender = serviceUser['preferred_gender'];
                       _ageRange = RangeValues(
@@ -291,13 +631,17 @@ class _SettingsScreenState extends State<SettingsScreen>
                         serviceUser['age_range']['end'].toDouble(),
                       );
                       _preferredLanguage = serviceUser['preferred_language'];
-                      _acceptNewPatients = serviceDelivery['accept_new_patients'];
+                      _acceptNewPatients =
+                          serviceDelivery['accept_new_patients'];
                       _homeVisitsOnly = serviceDelivery['home_visits_only'];
                       _clinicVisitsOnly = serviceDelivery['clinic_visits_only'];
-                      _maxTravelDistance = serviceDelivery['max_travel_distance'].toString();
-                      _weekendsAvailable = serviceDelivery['weekends_available'];
-                      _eveningsAvailable = serviceDelivery['evenings_available'];
-                      
+                      _maxTravelDistance =
+                          serviceDelivery['max_travel_distance'].toString();
+                      _weekendsAvailable =
+                          serviceDelivery['weekends_available'];
+                      _eveningsAvailable =
+                          serviceDelivery['evenings_available'];
+
                       // Reset local settings too
                       _notificationsEnabled = true;
                       _soundEnabled = true;
@@ -308,10 +652,14 @@ class _SettingsScreenState extends State<SettingsScreen>
                     await _saveLocalSettings();
                     _showSuccessMessage('Settings reset to defaults');
                   } else {
-                    _showErrorMessage(result['message'] ?? 'Failed to reset preferences');
+                    _showErrorMessage(
+                      result['message'] ?? 'Failed to reset preferences',
+                    );
                   }
                 } catch (e) {
-                  _showErrorMessage('Failed to reset settings: ${e.toString()}');
+                  _showErrorMessage(
+                    'Failed to reset settings: ${e.toString()}',
+                  );
                 } finally {
                   setState(() {
                     _isSaving = false;
@@ -353,7 +701,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
           IconButton(
             onPressed: _isSaving ? null : _saveSettings,
-            icon: _isSaving 
+            icon: _isSaving
                 ? const SizedBox(
                     width: 20,
                     height: 20,
@@ -369,9 +717,7 @@ class _SettingsScreenState extends State<SettingsScreen>
         ],
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: _primaryColor),
-            )
+          ? const Center(child: CircularProgressIndicator(color: _primaryColor))
           : FadeTransition(
               opacity: _fadeAnimation,
               child: SlideTransition(
@@ -419,7 +765,85 @@ class _SettingsScreenState extends State<SettingsScreen>
                           _buildThemeSelection(),
                         ],
                       ),
+
                       const SizedBox(height: 24),
+
+                      _buildSectionCard(
+                        'Account Management',
+                        Icons.account_circle_rounded,
+                        [
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: _errorColor.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: _errorColor.withOpacity(0.2),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.warning_amber_rounded,
+                                      color: _errorColor,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      'Danger Zone',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: _errorColor,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                const Text(
+                                  'Once you delete your account, there is no going back. Please be certain.',
+                                  style: TextStyle(
+                                    color: _textSecondary,
+                                    fontSize: 14,
+                                    height: 1.4,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton.icon(
+                                    onPressed: _isSaving || _isLoading
+                                        ? null
+                                        : _showDeleteAccountDialog,
+                                    icon: const Icon(
+                                      Icons.delete_forever_rounded,
+                                      size: 20,
+                                    ),
+                                    label: const Text('Delete My Account'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: _errorColor,
+                                      side: BorderSide(
+                                        color: _errorColor,
+                                        width: 1,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                        horizontal: 16,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
 
                       // Save Button
                       SizedBox(
@@ -443,7 +867,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                                       height: 20,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
                                       ),
                                     ),
                                     SizedBox(width: 12),
@@ -539,15 +966,27 @@ class _SettingsScreenState extends State<SettingsScreen>
         Row(
           children: [
             Expanded(
-              child: _buildGenderOption('all', 'All Genders', Icons.people_rounded),
+              child: _buildGenderOption(
+                'all',
+                'All Genders',
+                Icons.people_rounded,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildGenderOption('male', 'Male Only', Icons.male_rounded),
+              child: _buildGenderOption(
+                'male',
+                'Male Only',
+                Icons.male_rounded,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildGenderOption('female', 'Female Only', Icons.female_rounded),
+              child: _buildGenderOption(
+                'female',
+                'Female Only',
+                Icons.female_rounded,
+              ),
             ),
           ],
         ),
@@ -558,11 +997,13 @@ class _SettingsScreenState extends State<SettingsScreen>
   Widget _buildGenderOption(String value, String label, IconData icon) {
     final isSelected = _selectedGender == value;
     return GestureDetector(
-      onTap: _isSaving ? null : () {
-        setState(() {
-          _selectedGender = value;
-        });
-      },
+      onTap: _isSaving
+          ? null
+          : () {
+              setState(() {
+                _selectedGender = value;
+              });
+            },
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -640,11 +1081,13 @@ class _SettingsScreenState extends State<SettingsScreen>
             _ageRange.start.round().toString(),
             _ageRange.end.round().toString(),
           ),
-          onChanged: _isSaving ? null : (RangeValues values) {
-            setState(() {
-              _ageRange = values;
-            });
-          },
+          onChanged: _isSaving
+              ? null
+              : (RangeValues values) {
+                  setState(() {
+                    _ageRange = values;
+                  });
+                },
         ),
       ],
     );
@@ -674,29 +1117,25 @@ class _SettingsScreenState extends State<SettingsScreen>
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: _preferredLanguage,
-              onChanged: _isSaving ? null : (String? newValue) {
-                if (newValue != null) {
-                  setState(() {
-                    _preferredLanguage = newValue;
-                  });
-                }
-              },
+              onChanged: _isSaving
+                  ? null
+                  : (String? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          _preferredLanguage = newValue;
+                        });
+                      }
+                    },
               items: _languages.map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem<String>(
                   value: value.toLowerCase(),
                   child: Text(
                     value,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: _textPrimary,
-                    ),
+                    style: const TextStyle(fontSize: 14, color: _textPrimary),
                   ),
                 );
               }).toList(),
-              icon: Icon(
-                Icons.arrow_drop_down_rounded,
-                color: _textSecondary,
-              ),
+              icon: Icon(Icons.arrow_drop_down_rounded, color: _textSecondary),
             ),
           ),
         ),
@@ -774,29 +1213,25 @@ class _SettingsScreenState extends State<SettingsScreen>
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: _maxTravelDistance,
-              onChanged: _isSaving ? null : (String? newValue) {
-                if (newValue != null) {
-                  setState(() {
-                    _maxTravelDistance = newValue;
-                  });
-                }
-              },
+              onChanged: _isSaving
+                  ? null
+                  : (String? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          _maxTravelDistance = newValue;
+                        });
+                      }
+                    },
               items: _distances.map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
                   child: Text(
                     '$value miles',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: _textPrimary,
-                    ),
+                    style: const TextStyle(fontSize: 14, color: _textPrimary),
                   ),
                 );
               }).toList(),
-              icon: Icon(
-                Icons.arrow_drop_down_rounded,
-                color: _textSecondary,
-              ),
+              icon: Icon(Icons.arrow_drop_down_rounded, color: _textSecondary),
             ),
           ),
         ),
@@ -892,7 +1327,11 @@ class _SettingsScreenState extends State<SettingsScreen>
         Row(
           children: [
             Expanded(
-              child: _buildThemeOption('light', 'Light', Icons.light_mode_rounded),
+              child: _buildThemeOption(
+                'light',
+                'Light',
+                Icons.light_mode_rounded,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -900,7 +1339,11 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildThemeOption('system', 'System', Icons.settings_brightness_rounded),
+              child: _buildThemeOption(
+                'system',
+                'System',
+                Icons.settings_brightness_rounded,
+              ),
             ),
           ],
         ),
@@ -911,11 +1354,13 @@ class _SettingsScreenState extends State<SettingsScreen>
   Widget _buildThemeOption(String value, String label, IconData icon) {
     final isSelected = _theme == value;
     return GestureDetector(
-      onTap: _isSaving ? null : () {
-        setState(() {
-          _theme = value;
-        });
-      },
+      onTap: _isSaving
+          ? null
+          : () {
+              setState(() {
+                _theme = value;
+              });
+            },
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -965,11 +1410,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       ),
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 20,
-            color: value ? _primaryColor : _textSecondary,
-          ),
+          Icon(icon, size: 20, color: value ? _primaryColor : _textSecondary),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -986,10 +1427,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: _textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 12, color: _textSecondary),
                 ),
               ],
             ),
