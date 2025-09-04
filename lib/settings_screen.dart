@@ -146,34 +146,127 @@ class _SettingsScreenState extends State<SettingsScreen>
   // Add these methods to your _SettingsScreenState class in settings_screen.dart
 
   // Add this method for account deletion
-  Future<void> _showDeleteAccountDialog() async {
-    // First check if account can be deleted
-    setState(() {
-      _isLoading = true;
-    });
+// Replace the _showDeleteAccountDialog method with this fixed version:
 
-    final accountInfo = await ApiService.getAccountDeletionInfo();
+Future<void> _showDeleteAccountDialog() async {
+  // First check if account can be deleted
+  setState(() {
+    _isLoading = true;
+  });
 
-    setState(() {
-      _isLoading = false;
-    });
+  final accountInfo = await ApiService.getAccountDeletionInfo();
 
-    if (!accountInfo['success']) {
-      _showErrorMessage(
-        'Failed to check account status: ${accountInfo['message']}',
-      );
-      return;
-    }
+  setState(() {
+    _isLoading = false;
+  });
 
-    final data = accountInfo['data'];
-    final hasPendingAppointments = data['pending_bookings_count'] > 0;
-    final upcomingAppointments = data['pending_bookings_count'] ?? 0;
+  if (!accountInfo['success']) {
+    _showErrorMessage(
+      'Failed to check account status: ${accountInfo['message']}',
+    );
+    return;
+  }
 
-    if (hasPendingAppointments) {
-      // Show warning about pending appointments
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
+  final data = accountInfo['data'];
+  final hasPendingAppointments = data['pending_bookings_count'] > 0;
+  final upcomingAppointments = data['pending_bookings_count'] ?? 0;
+
+  if (hasPendingAppointments) {
+    // Show warning about pending appointments
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.orange,
+                size: 28,
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Cannot Delete Account',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: _textPrimary,
+                  fontSize: 18,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'You have $upcomingAppointments pending appointment${upcomingAppointments == 1 ? '' : 's'}. You must complete or cancel all appointments before deleting your account.',
+                style: const TextStyle(color: _textSecondary, fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.orange, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Please manage your appointments first, then try again.',
+                        style: TextStyle(
+                          color: Colors.orange.shade800,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK', style: TextStyle(color: _primaryColor)),
+            ),
+          ],
+        );
+      },
+    );
+    return;
+  }
+
+  // Show deletion confirmation dialog
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController reasonController = TextEditingController();
+  bool isDeleting = false;
+
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext dialogContext) {
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          // Add listener to password controller for real-time updates
+          void onPasswordChanged() {
+            setDialogState(() {}); // Rebuild when password changes
+          }
+
+          // Add the listener if not already added
+          if (!passwordController.hasListeners) {
+            passwordController.addListener(onPasswordChanged);
+          }
+
           return AlertDialog(
             backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(
@@ -182,13 +275,13 @@ class _SettingsScreenState extends State<SettingsScreen>
             title: Row(
               children: [
                 Icon(
-                  Icons.warning_amber_rounded,
-                  color: Colors.orange,
+                  Icons.delete_forever_rounded,
+                  color: _errorColor,
                   size: 28,
                 ),
                 const SizedBox(width: 12),
                 const Text(
-                  'Cannot Delete Account',
+                  'Delete Account',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: _textPrimary,
@@ -197,289 +290,206 @@ class _SettingsScreenState extends State<SettingsScreen>
                 ),
               ],
             ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'You have $upcomingAppointments pending appointment${upcomingAppointments == 1 ? '' : 's'}. You must complete or cancel all appointments before deleting your account.',
-                  style: const TextStyle(color: _textSecondary, fontSize: 14),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.info_outline, color: Colors.orange, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Please manage your appointments first, then try again.',
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: _errorColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: _errorColor.withOpacity(0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.warning_rounded,
+                              color: _errorColor,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'This action cannot be undone',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: _errorColor,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Deleting your account will permanently remove:\n• Your profile and credentials\n• All appointment history\n• Personal preferences\n• Any stored data',
                           style: TextStyle(
-                            color: Colors.orange.shade800,
+                            color: _errorColor.withOpacity(0.9),
                             fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                            height: 1.4,
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Enter your password to confirm:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: _textPrimary,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: passwordController,
+                    obscureText: true,
+                    enabled: !isDeleting,
+                    decoration: InputDecoration(
+                      hintText: 'Your current password',
+                      hintStyle: const TextStyle(
+                        color: _textSecondary,
+                        fontSize: 14,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: _borderColor),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: _primaryColor,
+                          width: 2,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.lock_outline,
+                        size: 20,
+                        color: _textSecondary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Reason for deletion (optional):',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: _textPrimary,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: reasonController,
+                    enabled: !isDeleting,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText:
+                          'Help us improve by sharing why you\'re leaving...',
+                      hintStyle: const TextStyle(
+                        color: _textSecondary,
+                        fontSize: 14,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: _borderColor),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: _primaryColor,
+                          width: 2,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.all(16),
+                    ),
+                  ),
+                ],
+              ),
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK', style: TextStyle(color: _primaryColor)),
+                onPressed: isDeleting
+                    ? null
+                    : () {
+                        passwordController.dispose();
+                        reasonController.dispose();
+                        Navigator.of(dialogContext).pop();
+                      },
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(color: _textSecondary),
+                ),
+              ),
+              FilledButton(
+                // Fixed condition - now checks current text value
+                onPressed: isDeleting || passwordController.text.trim().isEmpty
+                    ? null
+                    : () async {
+                        setDialogState(() {
+                          isDeleting = true;
+                        });
+
+                        final result = await ApiService.deleteAccount(
+                          password: passwordController.text.trim(),
+                          reason: reasonController.text.trim().isEmpty
+                              ? null
+                              : reasonController.text.trim(),
+                        );
+
+                        passwordController.dispose();
+                        reasonController.dispose();
+                        Navigator.of(dialogContext).pop();
+
+                        if (result['success']) {
+                          // Account deleted successfully, navigate to login
+                          _showSuccessMessage('Account deleted successfully');
+                          Navigator.of(context).pushReplacementNamed('/login');
+                        } else {
+                          _showErrorMessage(
+                            result['message'] ?? 'Failed to delete account',
+                          );
+                        }
+                      },
+                style: FilledButton.styleFrom(
+                  backgroundColor: _errorColor,
+                  foregroundColor: Colors.white,
+                ),
+                child: isDeleting
+                    ? const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Text('Deleting...'),
+                        ],
+                      )
+                    : const Text('Delete Account'),
               ),
             ],
           );
         },
       );
-      return;
-    }
-
-    // Show deletion confirmation dialog
-    final TextEditingController passwordController = TextEditingController();
-    final TextEditingController reasonController = TextEditingController();
-    bool isDeleting = false;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              title: Row(
-                children: [
-                  Icon(
-                    Icons.delete_forever_rounded,
-                    color: _errorColor,
-                    size: 28,
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Delete Account',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: _textPrimary,
-                      fontSize: 18,
-                    ),
-                  ),
-                ],
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: _errorColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: _errorColor.withOpacity(0.3)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.warning_rounded,
-                                color: _errorColor,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'This action cannot be undone',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: _errorColor,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Deleting your account will permanently remove:\n• Your profile and credentials\n• All appointment history\n• Personal preferences\n• Any stored data',
-                            style: TextStyle(
-                              color: _errorColor.withOpacity(0.9),
-                              fontSize: 12,
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Enter your password to confirm:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: _textPrimary,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: passwordController,
-                      obscureText: true,
-                      enabled: !isDeleting,
-                      decoration: InputDecoration(
-                        hintText: 'Your current password',
-                        hintStyle: const TextStyle(
-                          color: _textSecondary,
-                          fontSize: 14,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: _borderColor),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: _primaryColor,
-                            width: 2,
-                          ),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.lock_outline,
-                          size: 20,
-                          color: _textSecondary,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Reason for deletion (optional):',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: _textPrimary,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: reasonController,
-                      enabled: !isDeleting,
-                      maxLines: 3,
-                      decoration: InputDecoration(
-                        hintText:
-                            'Help us improve by sharing why you\'re leaving...',
-                        hintStyle: const TextStyle(
-                          color: _textSecondary,
-                          fontSize: 14,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: _borderColor),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: _primaryColor,
-                            width: 2,
-                          ),
-                        ),
-                        contentPadding: const EdgeInsets.all(16),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: isDeleting
-                      ? null
-                      : () {
-                          passwordController.dispose();
-                          reasonController.dispose();
-                          Navigator.of(dialogContext).pop();
-                        },
-                  child: const Text(
-                    'Cancel',
-                    style: TextStyle(color: _textSecondary),
-                  ),
-                ),
-                FilledButton(
-                  onPressed:
-                      isDeleting || passwordController.text.trim().isEmpty
-                      ? null
-                      : () async {
-                          setDialogState(() {
-                            isDeleting = true;
-                          });
-
-                          final result = await ApiService.deleteAccount(
-                            password: passwordController.text.trim(),
-                            reason: reasonController.text.trim().isEmpty
-                                ? null
-                                : reasonController.text.trim(),
-                          );
-
-                          passwordController.dispose();
-                          reasonController.dispose();
-                          Navigator.of(dialogContext).pop();
-
-                          if (result['success']) {
-                            // Account deleted successfully, navigate to login
-                            _showSuccessMessage('Account deleted successfully');
-                            Navigator.of(
-                              context,
-                            ).pushReplacementNamed('/login');
-                          } else {
-                            _showErrorMessage(
-                              result['message'] ?? 'Failed to delete account',
-                            );
-                          }
-                        },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: _errorColor,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: isDeleting
-                      ? const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 8),
-                            Text('Deleting...'),
-                          ],
-                        )
-                      : const Text('Delete Account'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
+    },
+  );
+}
 
   Future<void> _loadLocalSettings() async {
     try {
@@ -844,7 +854,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                           ),
                         ],
                       ),
-
+                   const SizedBox(height: 24),
                       // Save Button
                       SizedBox(
                         width: double.infinity,
