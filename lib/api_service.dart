@@ -3,8 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // static const String baseUrl = 'http://127.0.0.1:8000/api';
-  static const String baseUrl = 'https://app.ceylonayurvedahealth.co.uk/api';
+  static const String baseUrl = 'http://127.0.0.1:8000/api';
+  // static const String baseUrl = 'https://app.ceylonayurvedahealth.co.uk/api';
 
   static Map<String, String> get headers => {
     'Content-Type': 'application/json',
@@ -167,6 +167,10 @@ class ApiService {
       if (response.statusCode == 200) {
         // Check if the API returns success in the response
         if (responseData['success'] == true) {
+          // Print login token to console
+          final token = responseData['data']['access_token'];
+          print('🔑 Login Token: $token');
+          
           return {
             'success': true,
             'data': responseData['data'],

@@ -3,6 +3,9 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'api_service.dart';
 import 'package:intl/intl.dart';
+import 'services/treatment_history_service.dart';
+import 'treatment_history_detail_screen.dart';
+import 'create_treatment_history_screen.dart';
 
 class MyAppointmentsScreen extends StatefulWidget {
   final Map<String, dynamic> therapistData;
@@ -144,28 +147,117 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
     await _loadAppointments();
   }
 
-
-
-String _formatDate(String dateString) {
-  try {
-    final date = DateTime.parse(dateString).toLocal();
-    final now = DateTime.now();
-    final difference = date.difference(DateTime(now.year, now.month, now.day)).inDays;
-
-    if (difference == 0) {
-      return 'Today';
-    } else if (difference == 1) {
-      return 'Tomorrow';
-    } else if (difference == -1) {
-      return 'Yesterday';
-    } else {
-      return DateFormat('dd/MM/yyyy').format(date);
+  Future<void> _checkTreatmentHistory(Map<String, dynamic> appointment) async {
+    if (appointment['status']?.toLowerCase() != 'completed') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Treatment history can only be added for completed appointments'),
+          backgroundColor: const Color(0xFFD97706),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
     }
-  } catch (e) {
-    return dateString;
-  }
-}
 
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Center(
+          child: CircularProgressIndicator(color: _primaryColor),
+        );
+      },
+    );
+
+    try {
+      // Check if treatment history already exists
+      final result = await TreatmentHistoryService.checkBookingHasHistory(appointment['id']);
+      
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+      
+      if (result['success']) {
+        if (result['has_history'] == true) {
+          // Navigate to view existing history
+          final historyResult = await TreatmentHistoryService.getTreatmentHistoryByBooking(appointment['id']);
+          if (historyResult['success'] && mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TreatmentHistoryDetailScreen(
+                  historyId: historyResult['data']['id'],
+                  therapistData: widget.therapistData,
+                ),
+              ),
+            );
+          }
+        } else {
+          // Navigate to create new history
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CreateTreatmentHistoryScreen(
+                  appointment: appointment,
+                  therapistData: widget.therapistData,
+                ),
+              ),
+            ).then((_) {
+              // Refresh appointments list when returning
+              _refreshAppointments();
+            });
+          }
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Failed to check treatment history'),
+              backgroundColor: const Color(0xFFDC2626),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Close loading dialog if still open
+      if (mounted) Navigator.of(context).pop();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: const Color(0xFFDC2626),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    }
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString).toLocal();
+      final now = DateTime.now();
+      final difference = date.difference(DateTime(now.year, now.month, now.day)).inDays;
+
+      if (difference == 0) {
+        return 'Today';
+      } else if (difference == 1) {
+        return 'Tomorrow';
+      } else if (difference == -1) {
+        return 'Yesterday';
+      } else {
+        return DateFormat('dd/MM/yyyy').format(date);
+      }
+    } catch (e) {
+      return dateString;
+    }
+  }
 
   String _formatTime(String timeString) {
     try {
@@ -721,28 +813,39 @@ String _formatDate(String dateString) {
                     ),
                   ),
                 ),
-                // Show confirm button only for pending status
-                // if (appointment['can_update_status'] == true &&
-                //     status.toLowerCase() == 'pending') ...[
-                //   const SizedBox(width: 12),
-                //   Expanded(
-                //     child: FilledButton(
-                //       onPressed: () => _confirmAppointment(appointment),
-                //       style: FilledButton.styleFrom(
-                //         backgroundColor: const Color(0xFF059669),
-                //         foregroundColor: Colors.white,
-                //         padding: const EdgeInsets.symmetric(vertical: 12),
-                //         shape: RoundedRectangleBorder(
-                //           borderRadius: BorderRadius.circular(12),
-                //         ),
-                //       ),
-                //       child: const Text(
-                //         'Confirm',
-                //         style: TextStyle(fontWeight: FontWeight.w500),
-                //       ),
-                //     ),
-                //   ),
-                // ],
+                
+                // Add treatment history button for completed appointments
+                if (appointment['status']?.toLowerCase() == 'completed') ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FutureBuilder<Map<String, dynamic>>(
+                      future: TreatmentHistoryService.checkBookingHasHistory(appointment['id']),
+                      builder: (context, snapshot) {
+                        final hasHistory = snapshot.data?['has_history'] == true;
+                        
+                        return OutlinedButton.icon(
+                          onPressed: () => _checkTreatmentHistory(appointment),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: hasHistory ? const Color(0xFF059669) : _primaryColor,
+                            side: BorderSide(color: hasHistory ? const Color(0xFF059669) : _primaryColor),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          icon: Icon(
+                            hasHistory ? Icons.assignment_rounded : Icons.add_circle_outline_rounded,
+                            size: 16,
+                          ),
+                          label: Text(
+                            hasHistory ? 'View History' : 'Add History',
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ],
             ),
           ],
@@ -980,34 +1083,48 @@ String _formatDate(String dateString) {
                       top: BorderSide(color: _borderColor.withOpacity(0.5)),
                     ),
                   ),
-                  child: Row(
+                  child: Column(
                     children: [
-                      if (appointment['can_update_status'] == true &&
-                          status.toLowerCase() == 'pending') ...[
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                              _confirmAppointment(appointment);
+                      // Treatment history button for completed appointments
+                      if (appointment['status']?.toLowerCase() == 'completed') ...[
+                        SizedBox(
+                          width: double.infinity,
+                          child: FutureBuilder<Map<String, dynamic>>(
+                            future: TreatmentHistoryService.checkBookingHasHistory(appointment['id']),
+                            builder: (context, snapshot) {
+                              final hasHistory = snapshot.data?['has_history'] == true;
+                              
+                              return OutlinedButton.icon(
+                                onPressed: () {
+                                  Navigator.of(context).pop(); // Close current dialog
+                                  _checkTreatmentHistory(appointment);
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: hasHistory ? const Color(0xFF059669) : _primaryColor,
+                                  side: BorderSide(color: hasHistory ? const Color(0xFF059669) : _primaryColor),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                icon: Icon(
+                                  hasHistory ? Icons.assignment_rounded : Icons.add_circle_outline_rounded,
+                                  size: 18,
+                                ),
+                                label: Text(
+                                  hasHistory ? 'View Treatment History' : 'Add Treatment History',
+                                  style: const TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                              );
                             },
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF059669),
-                              side: const BorderSide(color: Color(0xFF059669)),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            icon: const Icon(Icons.check_rounded, size: 18),
-                            label: const Text(
-                              'Confirm',
-                              style: TextStyle(fontWeight: FontWeight.w600),
-                            ),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(height: 12),
                       ],
-                      Expanded(
+                      
+                      // Close button
+                      SizedBox(
+                        width: double.infinity,
                         child: FilledButton(
                           onPressed: () => Navigator.of(context).pop(),
                           style: FilledButton.styleFrom(

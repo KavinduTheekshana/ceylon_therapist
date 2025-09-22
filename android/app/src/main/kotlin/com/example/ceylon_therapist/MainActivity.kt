@@ -1,4 +1,4 @@
-package com.example.ceylon_therapist
+package com.ceylon.ceylon_therapist
 
 import io.flutter.embedding.android.FlutterActivity
 

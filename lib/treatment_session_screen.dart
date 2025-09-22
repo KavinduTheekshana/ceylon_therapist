@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'api_service.dart';
+import 'services/treatment_history_service.dart';
+import 'create_treatment_history_screen.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 class TreatmentSessionScreen extends StatefulWidget {
@@ -408,254 +410,338 @@ class _TreatmentSessionScreenState extends State<TreatmentSessionScreen>
   }
 
   void _showCompletionDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            bool isConfirming = false;
-            final TextEditingController notesController = TextEditingController(
-              text: 'Session completed and confirmed by therapist',
-            );
-            
-            return AlertDialog(
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              title: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: _successColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.check_circle,
-                      color: _successColor,
-                      size: 24,
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          bool isConfirming = false;
+          bool hasHistory = false;
+          final TextEditingController notesController = TextEditingController(
+            text: 'Session completed and confirmed by therapist',
+          );
+          
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: _successColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.check_circle,
+                    color: _successColor,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Session Complete!',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: _textPrimary,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'Session Complete!',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
+                ),
+                IconButton(
+                  onPressed: isConfirming ? null : () {
+                    Navigator.of(context).pop(); // Just close dialog
+                  },
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: _textSecondary,
+                    size: 24,
+                  ),
+                  style: IconButton.styleFrom(
+                    backgroundColor: _borderColor.withOpacity(0.5),
+                    padding: const EdgeInsets.all(8),
+                  ),
+                ),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Treatment session for ${widget.appointment['customer_name']} has been completed successfully.',
+                    style: const TextStyle(color: _textSecondary),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: _successColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Service: ${widget.appointment['service']['title']}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: _textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Duration: ${widget.appointment['service']['duration']} minutes',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: _textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Session Notes section (always visible)
+                  const Text(
+                    'Session Notes',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: _textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: _borderColor),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: TextField(
+                      controller: notesController,
+                      enabled: !isConfirming,
+                      maxLines: 3,
+                      maxLength: 250,
+                      decoration: InputDecoration(
+                        hintText: 'Edit the session notes if needed...',
+                        hintStyle: TextStyle(
+                          color: _textSecondary.withOpacity(0.7),
+                          fontSize: 13,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.all(12),
+                        counterStyle: const TextStyle(fontSize: 11),
+                      ),
+                      style: const TextStyle(
+                        fontSize: 13,
                         color: _textPrimary,
                       ),
                     ),
                   ),
-                  IconButton(
-                    onPressed: isConfirming ? null : () {
-                      Navigator.of(context).pop(); // Just close dialog
-                    },
-                    icon: const Icon(
-                      Icons.close_rounded,
+                  
+                  const SizedBox(height: 12),
+                  const Text(
+                    'After confirming, you can add detailed treatment history.',
+                    style: TextStyle(
+                      fontSize: 12,
                       color: _textSecondary,
-                      size: 24,
+                      fontStyle: FontStyle.italic,
                     ),
-                    style: IconButton.styleFrom(
-                      backgroundColor: _borderColor.withOpacity(0.5),
-                      padding: const EdgeInsets.all(8),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: isConfirming ? null : () async {
+                        // Navigate to treatment history screen first
+                        final result = await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CreateTreatmentHistoryScreen(
+                              appointment: widget.appointment,
+                              therapistData: {}, // Pass therapist data if needed
+                            ),
+                          ),
+                        );
+                        
+                        if (result == true) {
+                          // History created successfully, now complete the booking
+                          setState(() {
+                            isConfirming = true;
+                            hasHistory = true;
+                          });
+
+                          try {
+                            final bookingId = widget.appointment['id'];
+                            if (bookingId == null) {
+                              throw Exception('Invalid booking ID');
+                            }
+
+                            final finalNotes = notesController.text.trim().isNotEmpty 
+                                ? notesController.text.trim() 
+                                : null;
+
+                            final apiResult = await ApiService.updateBookingStatus(
+                              bookingId: bookingId,
+                              status: 'completed',
+                              notes: finalNotes,
+                            );
+
+                            if (apiResult['success']) {
+                              if (mounted) {
+                                Navigator.of(context).pop(); // Close dialog
+                                Navigator.of(context).pop(); // Go back to appointments
+                                
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Text('Session completed with treatment history'),
+                                    backgroundColor: _successColor,
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                );
+                              }
+                            } else {
+                              throw Exception(apiResult['message'] ?? 'Failed to update booking');
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error: ${e.toString()}'),
+                                  backgroundColor: _errorColor,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              );
+                            }
+                          } finally {
+                            if (mounted) {
+                              setState(() {
+                                isConfirming = false;
+                              });
+                            }
+                          }
+                        }
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _primaryColor,
+                        side: const BorderSide(color: _primaryColor),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text(
+                        'Treatment Note',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: isConfirming ? null : () async {
+                        setState(() {
+                          isConfirming = true;
+                        });
+
+                        try {
+                          final bookingId = widget.appointment['id'];
+                          if (bookingId == null) {
+                            throw Exception('Invalid booking ID');
+                          }
+
+                          final finalNotes = notesController.text.trim().isNotEmpty 
+                              ? notesController.text.trim() 
+                              : null;
+
+                          final result = await ApiService.updateBookingStatus(
+                            bookingId: bookingId,
+                            status: 'completed',
+                            notes: finalNotes,
+                          );
+
+                          if (result['success']) {
+                            if (mounted) {
+                              Navigator.of(context).pop(); // Close dialog
+                              Navigator.of(context).pop(); // Go back to appointments
+                              
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text('Session completed successfully'),
+                                  backgroundColor: _successColor,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              );
+                            }
+                          } else {
+                            throw Exception(result['message'] ?? 'Failed to update booking');
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error: ${e.toString()}'),
+                                backgroundColor: _errorColor,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            );
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() {
+                              isConfirming = false;
+                            });
+                          }
+                        }
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: _successColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: isConfirming
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text(
+                              'Complete Only',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
                     ),
                   ),
                 ],
               ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Treatment session for ${widget.appointment['customer_name']} has been completed successfully.',
-                      style: const TextStyle(color: _textSecondary),
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: _successColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            'Service: ${widget.appointment['service']['title']}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: _textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Duration: ${widget.appointment['service']['duration']} minutes',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: _textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    // Session Notes section (always visible)
-                    const Text(
-                      'Session Notes',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: _textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: _borderColor),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: TextField(
-                        controller: notesController,
-                        enabled: !isConfirming,
-                        maxLines: 3,
-                        maxLength: 250,
-                        decoration: InputDecoration(
-                          hintText: 'Edit the session notes if needed...',
-                          hintStyle: TextStyle(
-                            color: _textSecondary.withOpacity(0.7),
-                            fontSize: 13,
-                          ),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.all(12),
-                          counterStyle: const TextStyle(fontSize: 11),
-                        ),
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: _textPrimary,
-                        ),
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 12),
-                    const Text(
-                      'Press "Confirm" to update the booking status in the system.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: _textSecondary,
-                        fontStyle: FontStyle.italic,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                FilledButton(
-                  onPressed: isConfirming ? null : () async {
-                    setState(() {
-                      isConfirming = true;
-                    });
-
-                    try {
-                      // Call API to update booking status
-                      final bookingId = widget.appointment['id'];
-                      if (bookingId == null) {
-                        throw Exception('Invalid booking ID');
-                      }
-
-                      // Use the notes from the text field (will have default text or user's edits)
-                      final finalNotes = notesController.text.trim().isNotEmpty 
-                          ? notesController.text.trim() 
-                          : null;
-
-                      final result = await ApiService.updateBookingStatus(
-                        bookingId: bookingId,
-                        status: 'completed',
-                        notes: finalNotes,
-                      );
-
-                      if (result['success']) {
-                        // Success - close dialog and go back
-                        if (mounted) {
-                          Navigator.of(context).pop(); // Close dialog
-                          Navigator.of(context).pop(); // Go back to appointments
-                          
-                          // Show success message
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('Session completed and booking updated successfully'),
-                              backgroundColor: _successColor,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          );
-                        }
-                      } else {
-                        // Show error
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(result['message'] ?? 'Failed to update booking'),
-                              backgroundColor: _errorColor,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          );
-                        }
-                      }
-                    } catch (e) {
-                      // Show error
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Error: ${e.toString()}'),
-                            backgroundColor: _errorColor,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        );
-                      }
-                    } finally {
-                      if (mounted) {
-                        setState(() {
-                          isConfirming = false;
-                        });
-                      }
-                    }
-                  },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: _successColor,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: isConfirming
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : const Text('Confirm'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
+            ],
+          );
+        },
+      );
+    },
+  );
+}
 
   String _formatTime(int seconds) {
     final minutes = seconds ~/ 60;

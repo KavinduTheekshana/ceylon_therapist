@@ -7,6 +7,7 @@ import 'my_profile_screen.dart';
 import 'today_appointments_screen.dart';
 import 'api_service.dart';
 import 'settings_screen.dart';
+import 'treatment_history_list_screen.dart';
 
 class TherapistDashboard extends StatefulWidget {
   final Map<String, dynamic> therapistData;
@@ -198,6 +199,16 @@ class _TherapistDashboardState extends State<TherapistDashboard>
       MaterialPageRoute(
         builder: (context) =>
             TodayAppointmentsScreen(therapistData: widget.therapistData),
+      ),
+    );
+  }
+
+  void _navigateToTreatmentHistory() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            TreatmentHistoryListScreen(therapistData: widget.therapistData),
       ),
     );
   }
@@ -666,6 +677,14 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                   onTap: () {
                     Navigator.pop(context);
                     _navigateToAppointments();
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.assignment_rounded,
+                  title: 'Treatment History',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _navigateToTreatmentHistory();
                   },
                 ),
                 _buildDrawerItem(
@@ -1144,11 +1163,11 @@ class _TherapistDashboardState extends State<TherapistDashboard>
             const SizedBox(width: 16),
             Expanded(
               child: _buildActionCard(
-                title: 'Services',
-                subtitle: 'Manage offerings',
-                icon: Icons.medical_services_rounded,
+                title: 'Treatment History',
+                subtitle: 'Patient records',
+                icon: Icons.assignment_rounded,
                 color: _successColor,
-                onTap: _navigateToServices,
+                onTap: _navigateToTreatmentHistory,
               ),
             ),
           ],
@@ -1158,21 +1177,21 @@ class _TherapistDashboardState extends State<TherapistDashboard>
           children: [
             Expanded(
               child: _buildActionCard(
-                title: 'Availability',
-                subtitle: 'Set schedule',
-                icon: Icons.schedule_rounded,
+                title: 'Services',
+                subtitle: 'Manage offerings',
+                icon: Icons.medical_services_rounded,
                 color: _successColor,
-                onTap: _navigateToAvailability,
+                onTap: _navigateToServices,
               ),
             ),
             const SizedBox(width: 16),
             Expanded(
               child: _buildActionCard(
-                title: 'Profile',
-                subtitle: 'Update info',
-                icon: Icons.person_rounded,
+                title: 'Availability',
+                subtitle: 'Set schedule',
+                icon: Icons.schedule_rounded,
                 color: _successColor,
-                onTap: _navigateToProfile,
+                onTap: _navigateToAvailability,
               ),
             ),
           ],
