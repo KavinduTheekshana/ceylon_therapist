@@ -3,8 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // static const String baseUrl = 'http://127.0.0.1:8000/api';
-  static const String baseUrl = 'https://app.ceylonayurvedahealth.co.uk/api';
+  static const String baseUrl = 'http://127.0.0.1:8000/api';
+  // static const String baseUrl = 'https://app.ceylonayurvedahealth.co.uk/api';
 
   static Map<String, String> get headers => {
     'Content-Type': 'application/json',
@@ -998,7 +998,55 @@ static Future<Map<String, dynamic>> getAccountDeletionInfo() async {
   }
 
   // Get therapist patients - all patients who have booked services from this therapist
-  static Future<Map<String, dynamic>> getTherapistPatients() async {
+  // Get therapist patients - Updated method to match Laravel routes
+  static Future<Map<String, dynamic>> getTherapistPatients({
+    int? perPage,
+    String? search,
+  }) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) {
+        return {'success': false, 'message': 'No access token found'};
+      }
+
+      // Build query parameters
+      final Map<String, String> queryParams = {};
+      if (perPage != null) queryParams['per_page'] = perPage.toString();
+      if (search != null && search.isNotEmpty) queryParams['search'] = search;
+
+      final Uri uri = Uri.parse('$baseUrl/therapist/patients').replace(
+        queryParameters: queryParams.isEmpty ? null : queryParams,
+      );
+
+      final response = await http.get(
+        uri,
+        headers: getAuthHeaders(token),
+      );
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'data': responseData['data'],
+          'pagination': responseData['pagination'],
+          'meta': responseData['meta'],
+        };
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to get patients',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
+  }
+
+  // Get specific patient details
+  static Future<Map<String, dynamic>> getPatientDetails({
+    required int patientId,
+  }) async {
     try {
       final token = await getAccessToken();
       if (token == null) {
@@ -1006,18 +1054,94 @@ static Future<Map<String, dynamic>> getAccountDeletionInfo() async {
       }
 
       final response = await http.get(
-        Uri.parse('$baseUrl/therapist/patients'),
+        Uri.parse('$baseUrl/therapist/patients/$patientId'),
         headers: getAuthHeaders(token),
       );
 
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        return {'success': true, 'data': responseData['data']};
+        return {
+          'success': true,
+          'data': responseData['data'],
+        };
       } else {
         return {
           'success': false,
-          'message': responseData['message'] ?? 'Failed to get patients',
+          'message': responseData['message'] ?? 'Failed to get patient details',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
+  }
+
+  // Get patient statistics for dashboard
+  static Future<Map<String, dynamic>> getPatientStats() async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) {
+        return {'success': false, 'message': 'No access token found'};
+      }
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/therapist/patients-stats'),
+        headers: getAuthHeaders(token),
+      );
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'data': responseData['data'],
+        };
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to get patient statistics',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
+  }
+
+  // Search patients
+  static Future<Map<String, dynamic>> searchPatients({
+    required String query,
+    int? limit,
+  }) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) {
+        return {'success': false, 'message': 'No access token found'};
+      }
+
+      final Map<String, String> queryParams = {'query': query};
+      if (limit != null) queryParams['limit'] = limit.toString();
+
+      final Uri uri = Uri.parse('$baseUrl/therapist/patients-search').replace(
+        queryParameters: queryParams,
+      );
+
+      final response = await http.get(
+        uri,
+        headers: getAuthHeaders(token),
+      );
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'data': responseData['data'],
+          'meta': responseData['meta'],
+        };
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to search patients',
         };
       }
     } catch (e) {
