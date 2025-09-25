@@ -8,6 +8,7 @@ import 'today_appointments_screen.dart';
 import 'api_service.dart';
 import 'settings_screen.dart';
 import 'treatment_history_list_screen.dart';
+import 'patient_list_screen.dart';
 
 class TherapistDashboard extends StatefulWidget {
   final Map<String, dynamic> therapistData;
@@ -209,6 +210,16 @@ class _TherapistDashboardState extends State<TherapistDashboard>
       MaterialPageRoute(
         builder: (context) =>
             TreatmentHistoryListScreen(therapistData: widget.therapistData),
+      ),
+    );
+  }
+
+  void _navigateToPatientList() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            PatientListScreen(therapistData: widget.therapistData),
       ),
     );
   }
@@ -685,6 +696,14 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                   onTap: () {
                     Navigator.pop(context);
                     _navigateToTreatmentHistory();
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.people_rounded,
+                  title: 'Patient List',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _navigateToPatientList();
                   },
                 ),
                 _buildDrawerItem(

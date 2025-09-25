@@ -996,4 +996,32 @@ static Future<Map<String, dynamic>> getAccountDeletionInfo() async {
       return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
+
+  // Get therapist patients - all patients who have booked services from this therapist
+  static Future<Map<String, dynamic>> getTherapistPatients() async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) {
+        return {'success': false, 'message': 'No access token found'};
+      }
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/therapist/patients'),
+        headers: getAuthHeaders(token),
+      );
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': responseData['data']};
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to get patients',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
+  }
 }
