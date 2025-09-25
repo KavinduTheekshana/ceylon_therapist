@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'api_service.dart';
+import 'patient_treatment_history_screen.dart';
 
 class PatientListScreen extends StatefulWidget {
   final Map<String, dynamic> therapistData;
@@ -742,7 +743,15 @@ class _PatientListScreenState extends State<PatientListScreen> {
                             child: ElevatedButton.icon(
                               onPressed: () {
                                 Navigator.pop(context);
-                                // TODO: Navigate to patient booking history
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => PatientTreatmentHistoryScreen(
+                                      patient: patient,
+                                      therapistData: widget.therapistData,
+                                    ),
+                                  ),
+                                );
                               },
                               icon: const Icon(Icons.history),
                               label: const Text('View History'),

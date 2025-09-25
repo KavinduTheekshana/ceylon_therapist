@@ -1148,4 +1148,38 @@ static Future<Map<String, dynamic>> getAccountDeletionInfo() async {
       return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
+
+  // Get patient treatment history
+  static Future<Map<String, dynamic>> getPatientTreatmentHistory({
+    required int patientId,
+  }) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) {
+        return {'success': false, 'message': 'No access token found'};
+      }
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/therapist/patients/$patientId/treatment-history'),
+        headers: getAuthHeaders(token),
+      );
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'data': responseData['data'],
+          'meta': responseData['meta'],
+        };
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to get patient treatment history',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
+  }
 }
