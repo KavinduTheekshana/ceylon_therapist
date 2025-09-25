@@ -1163,11 +1163,11 @@ class _TherapistDashboardState extends State<TherapistDashboard>
             const SizedBox(width: 16),
             Expanded(
               child: _buildActionCard(
-                title: 'Treatment History',
-                subtitle: 'Patient records',
-                icon: Icons.assignment_rounded,
+                title: 'Services',
+                subtitle: 'Manage offerings',
+                icon: Icons.medical_services_rounded,
                 color: _successColor,
-                onTap: _navigateToTreatmentHistory,
+                onTap: _navigateToServices,
               ),
             ),
           ],
@@ -1177,21 +1177,21 @@ class _TherapistDashboardState extends State<TherapistDashboard>
           children: [
             Expanded(
               child: _buildActionCard(
-                title: 'Services',
-                subtitle: 'Manage offerings',
-                icon: Icons.medical_services_rounded,
-                color: _successColor,
-                onTap: _navigateToServices,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _buildActionCard(
                 title: 'Availability',
                 subtitle: 'Set schedule',
                 icon: Icons.schedule_rounded,
                 color: _successColor,
                 onTap: _navigateToAvailability,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildActionCard(
+                title: 'Profile',
+                subtitle: 'Manage profile',
+                icon: Icons.person_rounded,
+                color: _successColor,
+                onTap: _navigateToProfile,
               ),
             ),
           ],
