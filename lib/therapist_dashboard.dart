@@ -10,6 +10,7 @@ import 'settings_screen.dart';
 import 'treatment_history_list_screen.dart';
 import 'patient_list_screen.dart';
 import 'services/notification_service.dart';
+import 'chat_list_screen.dart';
 
 class TherapistDashboard extends StatefulWidget {
   final Map<String, dynamic> therapistData;
@@ -280,6 +281,15 @@ class _TherapistDashboardState extends State<TherapistDashboard>
     );
   }
 
+  void _navigateToChats() {  // ✅ ADD THIS ENTIRE METHOD
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => const ChatListScreen(),
+    ),
+  );
+}
+
   String _formatDate(String dateString) {
     try {
       final date = DateTime.parse(dateString);
@@ -345,6 +355,10 @@ class _TherapistDashboardState extends State<TherapistDashboard>
 
                 // Today's Appointments Button - Featured
                 _buildTodayAppointmentsButton(),
+                const SizedBox(height: 24),
+
+                // Patient Chats Button - Featured
+                _buildPatientChatsButton(),
                 const SizedBox(height: 24),
 
                 // Quick Stats
@@ -449,6 +463,85 @@ class _TherapistDashboardState extends State<TherapistDashboard>
       ),
     );
   }
+
+
+  Widget _buildPatientChatsButton() {
+  return GestureDetector(
+    onTap: _navigateToChats,
+    child: Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [_primaryColor, _primaryColor.withOpacity(0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: _primaryColor.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(
+              Icons.chat_bubble_rounded,
+              size: 32,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Patient Chats',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'View messages from your patients',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.arrow_forward_rounded,
+              size: 20,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
   Widget _buildModernDrawer(Map<String, dynamic> therapist) {
     return Drawer(
@@ -710,6 +803,14 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                   onTap: () {
                     Navigator.pop(context);
                     _navigateToPatientList();
+                  },
+                ),
+                _buildDrawerItem(  
+                  icon: Icons.chat_bubble_rounded,
+                  title: 'Patient Chats',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _navigateToChats();
                   },
                 ),
                 _buildDrawerItem(
@@ -1219,6 +1320,16 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                 onTap: _navigateToProfile,
               ),
             ),
+    //         Expanded(
+    //   child: _buildActionCard(  // ✅ CHANGED FROM Profile TO Chats
+    //     title: 'Patient Chats',
+    //     subtitle: 'Messages',
+    //     icon: Icons.chat_bubble_rounded,
+    //     color: _successColor,
+    //     onTap: _navigateToChats,
+    //   ),
+    // ),
+
           ],
         ),
       ],
