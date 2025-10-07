@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'api_service.dart';
 import 'settings_screen.dart';
+import 'services/notification_service.dart';
 
 class MyProfileScreen extends StatefulWidget {
   final Map<String, dynamic> therapistData;
@@ -248,6 +249,10 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   // **NEW: Logout method for profile update**
   Future<void> _logoutAndRedirect() async {
     try {
+      // ADD: Unregister FCM token before logout
+    final notificationService = NotificationService();
+    await notificationService.unregisterToken();
+
       // Clear all stored data
       await ApiService.logout();
 

@@ -5,6 +5,7 @@ import 'therapist_dashboard.dart';
 import 'account_inactive_screen.dart';
 import 'registration_otp_screen.dart'; // Add this import
 import 'api_service.dart';
+import 'services/notification_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -187,6 +188,10 @@ class _LoginScreenState extends State<LoginScreen>
       if (result['success']) {
         // Save login data using ApiService
         await ApiService.saveLoginData(result);
+
+        //Initialize notification service after login
+        final notificationService = NotificationService();
+        await notificationService.initialize();
         
         // Get therapist data from the response
         final therapistData = result['data']['therapist'];
