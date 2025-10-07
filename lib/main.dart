@@ -3,18 +3,32 @@ import 'login_screen.dart';
 import 'therapist_dashboard.dart';
 import 'api_service.dart';
 import 'register_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'services/notification_service.dart';
 
-void main() {
-  runApp(const TherapistApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase
+  await Firebase.initializeApp();
+  
+  // Initialize notification service
+  final notificationService = NotificationService();
+  await notificationService.initialize();
+  
+  runApp(TherapistApp(notificationService: notificationService));
 }
 
 class TherapistApp extends StatelessWidget {
-  const TherapistApp({super.key});
+  final NotificationService notificationService;
+  
+  const TherapistApp({super.key, required this.notificationService});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Therapist App',
+      navigatorKey: notificationService.navigatorKey, 
       theme: ThemeData(
         primarySwatch: MaterialColor(0xFF9A563A, {
           50: const Color(0xFFF5F1EF),

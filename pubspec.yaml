@@ -20,6 +20,15 @@ dependencies:
   # internet_connection_checker: ^1.0.0+1
   url_launcher: ^6.2.2  # Add this for launching maps
 
+   # Firebase Core (required)
+  firebase_core: ^2.24.2
+  
+  # Firebase Cloud Messaging
+  firebase_messaging: ^14.7.9
+  
+  # HTTP requests
+  # http: ^1.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

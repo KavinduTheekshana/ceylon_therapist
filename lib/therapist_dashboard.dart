@@ -9,6 +9,7 @@ import 'api_service.dart';
 import 'settings_screen.dart';
 import 'treatment_history_list_screen.dart';
 import 'patient_list_screen.dart';
+import 'services/notification_service.dart';
 
 class TherapistDashboard extends StatefulWidget {
   final Map<String, dynamic> therapistData;
@@ -146,6 +147,11 @@ class _TherapistDashboardState extends State<TherapistDashboard>
   }
 
   Future<void> _logout() async {
+
+  //ADD: Unregister FCM token before logout
+  final notificationService = NotificationService();
+  await notificationService.unregisterToken();
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
 
