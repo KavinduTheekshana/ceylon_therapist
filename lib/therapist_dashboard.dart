@@ -604,13 +604,15 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  therapist['name'] ?? 'Therapist',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                    therapist['nickname']?.toString().isNotEmpty == true
+                        ? therapist['nickname']
+                        : therapist['name'] ?? 'Therapist',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
                 const SizedBox(height: 4),
                 Text(
                   therapist['email'] ?? '',
@@ -973,13 +975,15 @@ class _TherapistDashboardState extends State<TherapistDashboard>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      therapist['name'] ?? 'Therapist',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
+                        therapist['nickname']?.toString().isNotEmpty == true
+                            ? therapist['nickname']
+                            : therapist['name'] ?? 'Therapist',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
                     const SizedBox(height: 8),
                     Row(
                       children: [

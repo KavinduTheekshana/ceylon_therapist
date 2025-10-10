@@ -745,6 +745,7 @@ static Future<Map<String, dynamic>> getAccountDeletionInfo() async {
   // Update therapist profile - FIXED: Removed email parameter
   static Future<Map<String, dynamic>> updateProfile({
     required String name,
+    String? nickname, 
     required String phone,
     String? bio,
   }) async {
@@ -760,7 +761,12 @@ static Future<Map<String, dynamic>> getAccountDeletionInfo() async {
       final response = await http.post(
         Uri.parse('$baseUrl/therapist/profile'),
         headers: getAuthHeaders(token),
-        body: json.encode({'name': name, 'phone': phone, 'bio': bio}),
+        body: json.encode({
+          'name': name, 
+          'nickname': nickname,  
+          'phone': phone, 
+          'bio': bio
+        }),
       );
 
       // print('📱 Update profile response status: ${response.statusCode}');

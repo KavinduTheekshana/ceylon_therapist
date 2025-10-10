@@ -24,9 +24,13 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 
   // Controllers for editing
   final _nameController = TextEditingController();
+  final _nicknameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _bioController = TextEditingController();
+
+  static const Color _primaryColor = Color(0xFF9a563a);
+static const Color _borderColor = Color(0xFFE5E7EB);
 
   @override
   void initState() {
@@ -57,6 +61,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   void dispose() {
     _animationController.dispose();
     _nameController.dispose();
+      _nicknameController.dispose(); 
     _emailController.dispose();
     _phoneController.dispose();
     _bioController.dispose();
@@ -66,6 +71,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   void _initializeProfile() {
     _profileData = Map<String, dynamic>.from(widget.therapistData);
     _nameController.text = _profileData['name'] ?? '';
+      _nicknameController.text = _profileData['nickname'] ?? ''; 
     _emailController.text = _profileData['email'] ?? '';
     _phoneController.text = _profileData['phone'] ?? '';
     _bioController.text = _profileData['bio'] ?? '';
@@ -122,6 +128,9 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     try {
       final result = await ApiService.updateProfile(
         name: _nameController.text.trim(),
+          nickname: _nicknameController.text.trim().isEmpty 
+      ? null 
+      : _nicknameController.text.trim(),
         phone: _phoneController.text.trim(),
         bio: _bioController.text.trim(),
       );
@@ -490,6 +499,9 @@ class _MyProfileScreenState extends State<MyProfileScreen>
         // Basic Information
         _buildInfoCard('Basic Information', Icons.person, [
           _buildInfoRow('Full Name', _profileData['name'] ?? 'N/A'),
+           if (_profileData['nickname'] != null && 
+      _profileData['nickname'].toString().isNotEmpty)
+    _buildInfoRow('Nickname', _profileData['nickname']),
           _buildInfoRow('Email', _profileData['email'] ?? 'N/A'),
           _buildInfoRow('Phone', _profileData['phone'] ?? 'N/A'),
           if (_profileData['bio'] != null &&
@@ -587,6 +599,32 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                   borderRadius: BorderRadius.circular(8),
                   borderSide: const BorderSide(color: Color(0xFF9a563a)),
                 ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            TextField(
+              controller: _nicknameController,
+              decoration: InputDecoration(
+                labelText: 'Nickname (Optional)',
+                hintText: 'e.g., Dr. Mike, Johnny',
+                helperText: 'A friendly name to display to users',
+                helperMaxLines: 2,
+                prefixIcon: Icon(Icons.badge, color: _primaryColor),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: _borderColor),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: _borderColor),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: _primaryColor, width: 2),
+                ),
+                filled: true,
+                fillColor: Colors.white,
               ),
             ),
             const SizedBox(height: 16),
